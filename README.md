@@ -1,2 +1,2 @@
-# F1FantasyProject
+# F1Fantasy
 

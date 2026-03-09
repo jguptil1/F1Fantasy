@@ -1,0 +1,16 @@
+# OS / misc
+.DS_Store
+.Rhistory
+
+# Python / notebooks
+__pycache__/
+.ipynb_checkpoints/
+
+# FastF1 cache
+data/cache/
+notebooks/data/cache/
+*.sqlite
+*.ff1pkl
+
+# Excel temp files
+~$*.xlsx
