@@ -1,0 +1,27 @@
+{
+  "model_name": "ElasticNet",
+  "best_params": {
+    "model__max_depth": 10,
+    "model__min_samples_leaf": 3,
+    "model__n_estimators": 500
+  },
+  "cv_mae": 9.881125839871865,
+  "features": [
+    "year",
+    "race_num",
+    "race_name",
+    "location",
+    "driver",
+    "price",
+    "constructor",
+    "country_code",
+    "price_change_prev_race",
+    "points_last_five_avg",
+    "ppm_last_5",
+    "momentum",
+    "price_increase",
+    "price_decrease",
+    "teammate_points_last5",
+    "teammate_delta_last5"
+  ]
+}
