@@ -1,2 +1,17 @@
 # FastF1 cache
-notebooks/data/cache/fastf1/
+# OS / misc
+.DS_Store
+.Rhistory
+
+# Python / notebooks
+__pycache__/
+.ipynb_checkpoints/
+
+# FastF1 / cache
+data/cache/
+notebooks/data/cache/
+*.sqlite
+*.ff1pkl
+
+# Temporary Excel lock files
+~$*.xlsx
