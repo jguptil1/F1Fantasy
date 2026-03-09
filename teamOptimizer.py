@@ -1,0 +1,185 @@
+#imports
+import pandas as pd
+import numpy as np
+
+from pathlib import Path
+
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, PULP_CBC_CMD, value
+
+
+def optimize_team(
+    budget: float,
+    drivers: pd.DataFrame,
+    cons: pd.DataFrame,
+    points_col: str = "predicted_points",
+    n_drivers: int = 5,
+    n_constructors: int = 2,
+    max_drivers_per_team: int | None = None,
+    use_drs: bool = False,
+    drs_multiplier: float = 2.0,
+    solver_msg: bool = False,
+    require_driver_from_each_constructor: bool = False,
+    min_drivers_per_selected_constructor: int = 1,
+):
+    """
+    Optimize an F1 Fantasy lineup using a specified points column and prices.
+
+    Parameters
+    ----------
+    budget : float
+        Max total budget allowed.
+    drivers : pd.DataFrame
+        Must include: driver, constructor, price, <points_col>
+    cons : pd.DataFrame
+        Must include: constructor, price, <points_col>
+    points_col : str, default "predicted_points"
+        Column to optimize on. Examples:
+        - "predicted_points" for pre-race optimization
+        - "points" for post-race optimal lineup analysis
+
+    Returns
+    -------
+    (drivers_selected_df, constructors_selected_df, summary_dict)
+    """
+
+    # Copy so original dfs are not modified outside the function
+    drivers = drivers.copy()
+    cons = cons.copy()
+
+    # Basic validation
+    needed_driver_cols = {"driver", "constructor", "price", points_col}
+    needed_cons_cols = {"constructor", "price", points_col}
+
+    if not needed_driver_cols.issubset(drivers.columns):
+        raise ValueError(
+            f"drivers missing columns: {needed_driver_cols - set(drivers.columns)}"
+        )
+    if not needed_cons_cols.issubset(cons.columns):
+        raise ValueError(
+            f"constructors missing columns: {needed_cons_cols - set(cons.columns)}"
+        )
+
+    # Normalize team keys
+    drivers["team_key"] = drivers["constructor"].astype(str).str.strip().str.upper()
+    cons["team_key"] = cons["constructor"].astype(str).str.strip().str.upper()
+
+    # Coerce types
+    drivers["price"] = pd.to_numeric(drivers["price"], errors="coerce")
+    drivers[points_col] = pd.to_numeric(drivers[points_col], errors="coerce")
+    cons["price"] = pd.to_numeric(cons["price"], errors="coerce")
+    cons[points_col] = pd.to_numeric(cons[points_col], errors="coerce")
+
+    # Drop rows with missing essentials
+    drivers = drivers.dropna(subset=["driver", "constructor", "price", points_col]).reset_index(drop=True)
+    cons = cons.dropna(subset=["constructor", "price", points_col]).reset_index(drop=True)
+
+    # Indices
+    d_idx = drivers.index.tolist()
+    c_idx = cons.index.tolist()
+
+    # Problem
+    prob = LpProblem("F1FantasyOptimizer", LpMaximize)
+
+    # Decision vars
+    x_d = LpVariable.dicts("pick_driver", d_idx, cat=LpBinary)
+    x_c = LpVariable.dicts("pick_constructor", c_idx, cat=LpBinary)
+
+    # Optional DRS vars
+    if use_drs:
+        z_drs = LpVariable.dicts("drs_driver", d_idx, cat=LpBinary)
+
+        for i in d_idx:
+            prob += z_drs[i] <= x_d[i]
+
+        prob += lpSum(z_drs[i] for i in d_idx) == 1
+    else:
+        z_drs = None
+
+    # Objective
+    obj = (
+        lpSum(drivers.loc[i, points_col] * x_d[i] for i in d_idx)
+        + lpSum(cons.loc[j, points_col] * x_c[j] for j in c_idx)
+    )
+
+    if use_drs:
+        obj += (drs_multiplier - 1.0) * lpSum(drivers.loc[i, points_col] * z_drs[i] for i in d_idx)
+
+    prob += obj
+
+    # Constraints
+    prob += lpSum(x_d[i] for i in d_idx) == n_drivers
+    prob += lpSum(x_c[j] for j in c_idx) == n_constructors
+
+    prob += (
+        lpSum(drivers.loc[i, "price"] * x_d[i] for i in d_idx)
+        + lpSum(cons.loc[j, "price"] * x_c[j] for j in c_idx)
+        <= budget
+    )
+
+    # Optional: max drivers per team
+    if max_drivers_per_team is not None:
+        for team in drivers["team_key"].unique():
+            team_driver_indices = drivers.index[drivers["team_key"] == team].tolist()
+            prob += lpSum(x_d[i] for i in team_driver_indices) <= max_drivers_per_team
+
+    # Optional: require at least N drivers from each selected constructor
+    if require_driver_from_each_constructor:
+        for j in c_idx:
+            team = cons.loc[j, "team_key"]
+            team_driver_indices = drivers.index[drivers["team_key"] == team].tolist()
+
+            if not team_driver_indices:
+                raise ValueError(f"No drivers found for constructor/team '{team}' in drivers df.")
+
+            prob += (
+                lpSum(x_d[i] for i in team_driver_indices)
+                >= min_drivers_per_selected_constructor * x_c[j]
+            )
+
+    # Solve
+    solver = PULP_CBC_CMD(msg=solver_msg)
+    prob.solve(solver)
+
+    # Extract results
+    picked_driver_rows = [i for i in d_idx if value(x_d[i]) == 1]
+    picked_cons_rows = [j for j in c_idx if value(x_c[j]) == 1]
+
+    drivers_sel = (
+        drivers.loc[picked_driver_rows]
+        .copy()
+        .sort_values(points_col, ascending=False)
+        .reset_index(drop=True)
+    )
+    cons_sel = (
+        cons.loc[picked_cons_rows]
+        .copy()
+        .sort_values(points_col, ascending=False)
+        .reset_index(drop=True)
+    )
+
+    # DRS driver
+    drs_driver = None
+    if use_drs:
+        drs_picks = [i for i in d_idx if value(z_drs[i]) == 1]
+        if drs_picks:
+            drs_driver = drivers.loc[drs_picks[0], "driver"]
+
+    total_price = float(drivers_sel["price"].sum() + cons_sel["price"].sum())
+    total_points = float(drivers_sel[points_col].sum() + cons_sel[points_col].sum())
+
+    if use_drs and drs_driver is not None:
+        drs_points = float(
+            drivers_sel.loc[drivers_sel["driver"] == drs_driver, points_col].iloc[0]
+        )
+        total_points += (drs_multiplier - 1.0) * drs_points
+
+    summary = {
+        "status": prob.status,
+        "budget": budget,
+        "points_column_used": points_col,
+        "total_price": round(total_price, 2),
+        "total_points": round(total_points, 2),
+        "drs_driver": drs_driver,
+    }
+
+    return drivers_sel, cons_sel, summary
