@@ -9,8 +9,8 @@ from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, PULP_CBC_CM
 
 def optimize_team(
     budget: float,
-    drivers: pd.DataFrame,
-    cons: pd.DataFrame,
+    drivers,
+    cons,
     points_col: str = "predicted_points",
     n_drivers: int = 5,
     n_constructors: int = 2,
