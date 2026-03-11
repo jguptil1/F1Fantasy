@@ -19,6 +19,8 @@ def optimize_team(
     budget: float,
     drivers,
     cons,
+    last_week_lineup: dict | None = None, 
+    free_transfers_avail: int = 2,
     points_col: str = "predicted_points",
     n_drivers: int = 5,
     n_constructors: int = 2,
@@ -40,10 +42,22 @@ def optimize_team(
         Must include: driver, constructor, price, <points_col>
     cons : pd.DataFrame
         Must include: constructor, price, <points_col>
+    transfer_aware : bool
+        If the engine will take into account transfers and transfer penelties
+    last_week_lineup: dict
+        this stores the drivers and constructors used in the prior week
+        - (EXAMPLE) last_week_roster = {
+            "drivers": {"VER", "LEC", "HUL", "COL", "LAW"},
+            "constructors": {"FER", "RB"}
+            }
+    free_transfers_avail: int
+        how many transfers are free before the penalty is incurred
+}
     points_col : str, default "predicted_points"
         Column to optimize on. Examples:
         - "predicted_points" for pre-race optimization
         - "points" for post-race optimal lineup analysis
+    
 
     Returns
     -------
@@ -105,6 +119,15 @@ def optimize_team(
     else:
         z_drs = None
 
+
+    #Optional Transfer Decision vars
+    if last_week_lineup is not None:
+        t_d = LpVariable.dicts("trans_driver", d_idx, cat=LpBinary)
+        t_c = LpVariable.dicts("trans_constr", c_idx, cat=LpBinary)
+    else: 
+        t_d = None
+        t_c = None
+
     # Objective
     obj = (
         #sum of mutiplying each driver's points by the switch
@@ -116,7 +139,7 @@ def optimize_team(
     if use_drs:
         obj += (drs_multiplier - 1.0) * lpSum(drivers.loc[i, points_col] * z_drs[i] for i in d_idx) 
 
-    prob += obj #prob is just the optimization container
+    
 
     ###########Constraints#############
     prob += lpSum(x_d[i] for i in d_idx) == n_drivers #the amount of drivers turned on needs to equal to n_drivers (5)
@@ -150,6 +173,38 @@ def optimize_team(
                 >= min_drivers_per_selected_constructor * x_c[j]
             )
 
+    #Optional: Transfer aware constraints
+    if last_week_lineup is not None:
+        prior_drivers = set(last_week_lineup["drivers"])
+        prior_constructors = set(last_week_lineup["constructors"])
+
+        for i in d_idx:
+            driver_name = drivers.loc[i, "driver"]
+            if driver_name in prior_drivers:
+                prob += t_d[i] == 0
+            else:
+                prob += t_d[i] == x_d[i]
+        
+        for j in c_idx:
+            constructor_name = cons.loc[j, "constructor"]
+            if constructor_name in prior_constructors:
+                prob += t_c[j] == 0
+            else:
+                prob += t_c[j] == x_c[j]
+
+        total_transfers = (
+            lpSum(t_d[i] for i in d_idx) +
+            lpSum(t_c[j] for j in c_idx)
+        )
+
+        paid_transfers = LpVariable("paid_transfers", lowBound=0, cat="Integer")
+        prob += paid_transfers >= total_transfers - free_transfers_avail
+
+        obj -= 10 * paid_transfers
+
+
+    prob += obj #prob is just the optimization container
+
     ########SOLVE############
     solver = PULP_CBC_CMD(msg=solver_msg)
     prob.solve(solver)
@@ -179,21 +234,43 @@ def optimize_team(
             drs_driver = drivers.loc[drs_picks[0], "driver"]
 
     total_price = float(drivers_sel["price"].sum() + cons_sel["price"].sum())
-    total_points = float(drivers_sel[points_col].sum() + cons_sel[points_col].sum())
+    gross_points = float(drivers_sel[points_col].sum() + cons_sel[points_col].sum())
 
     if use_drs and drs_driver is not None:
         drs_points = float(
             drivers_sel.loc[drivers_sel["driver"] == drs_driver, points_col].iloc[0]
         )
-        total_points += (drs_multiplier - 1.0) * drs_points
+        gross_points += (drs_multiplier - 1.0) * drs_points
+    
+    if last_week_lineup is not None:
+        total_transfers_val = int(round(value(total_transfers)))
+        paid_transfers_val = int(round(value(paid_transfers)))
+        transfer_penalty = paid_transfers_val * 10
+        net_points = gross_points - transfer_penalty
 
-    summary = {
-        "status": prob.status,
-        "budget": budget,
-        "points_column_used": points_col,
-        "total_price": round(total_price, 2),
-        "total_points": round(total_points, 2),
-        "drs_driver": drs_driver,
-    }
+    if last_week_lineup is not None:
+        summary = {
+            "status": prob.status,
+            "budget": budget,
+            "points_column_used": points_col,
+            "total_price": round(total_price, 2),
+            "gross_points": round(gross_points, 2),
+            "total_transfers": total_transfers_val,
+            "free_transfers_avail": free_transfers_avail,
+            "paid_transfers": paid_transfers_val,
+            "transfer_penalty": transfer_penalty,
+            "net_points": round(net_points, 2),
+            "drs_driver": drs_driver,
+        }
+
+    else:
+        summary = {
+            "status": prob.status,
+            "budget": budget,
+            "points_column_used": points_col,
+            "total_price": round(total_price, 2),
+            "total_points": round(gross_points, 2),
+            "drs_driver": drs_driver,
+        }
 
     return drivers_sel, cons_sel, summary
