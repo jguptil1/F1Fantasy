@@ -6,6 +6,14 @@ from pathlib import Path
 
 from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, PULP_CBC_CMD, value
 
+# pulp: underlying optimization engine
+# LpProblem: optimzation problem object
+# LpMaximize: we are wanting to maximize projected points, will use this in the LpProblem object
+# LpVariable: creates decision variables like picking a driver
+# lpSum: builds linear sums for objectives and constraints
+# lpBinary: variables can be 0 or 1
+# PULP_CBC_CMD: solves the model and reads solution variables
+
 
 def optimize_team(
     budget: float,
@@ -42,11 +50,11 @@ def optimize_team(
     (drivers_selected_df, constructors_selected_df, summary_dict)
     """
 
-    # Copy so original dfs are not modified outside the function
+    # making a copy so that the originals are unaffected by this function
     drivers = drivers.copy()
     cons = cons.copy()
 
-    # Basic validation
+    # Basic validation for debugging
     needed_driver_cols = {"driver", "constructor", "price", points_col}
     needed_cons_cols = {"constructor", "price", points_col}
 
@@ -63,7 +71,7 @@ def optimize_team(
     drivers["team_key"] = drivers["constructor"].astype(str).str.strip().str.upper()
     cons["team_key"] = cons["constructor"].astype(str).str.strip().str.upper()
 
-    # Coerce types
+    # Coerce to numeric types where needed
     drivers["price"] = pd.to_numeric(drivers["price"], errors="coerce")
     drivers[points_col] = pd.to_numeric(drivers[points_col], errors="coerce")
     cons["price"] = pd.to_numeric(cons["price"], errors="coerce")
@@ -78,15 +86,17 @@ def optimize_team(
     c_idx = cons.index.tolist()
 
     # Problem
-    prob = LpProblem("F1FantasyOptimizer", LpMaximize)
+    prob = LpProblem("F1FantasyOptimizer", LpMaximize) #instantiating the object with a name and type
 
-    # Decision vars
-    x_d = LpVariable.dicts("pick_driver", d_idx, cat=LpBinary)
-    x_c = LpVariable.dicts("pick_constructor", c_idx, cat=LpBinary)
+    #########DECISION VARS###########
 
-    # Optional DRS vars
+    # Mandatory Decision vars
+    x_d = LpVariable.dicts("pick_driver", d_idx, cat=LpBinary) #creates a binary variable for each driver row index
+    x_c = LpVariable.dicts("pick_constructor", c_idx, cat=LpBinary) #creates a binary variable for each con row index
+
+    # Optional DRS vars (if param is true)
     if use_drs:
-        z_drs = LpVariable.dicts("drs_driver", d_idx, cat=LpBinary)
+        z_drs = LpVariable.dicts("drs_driver", d_idx, cat=LpBinary) #creates a binary variable for each driver row index
 
         for i in d_idx:
             prob += z_drs[i] <= x_d[i]
@@ -97,19 +107,23 @@ def optimize_team(
 
     # Objective
     obj = (
+        #sum of mutiplying each driver's points by the switch
         lpSum(drivers.loc[i, points_col] * x_d[i] for i in d_idx)
+        #sum of mutiplying each constructor's points by the switch
         + lpSum(cons.loc[j, points_col] * x_c[j] for j in c_idx)
     )
 
     if use_drs:
-        obj += (drs_multiplier - 1.0) * lpSum(drivers.loc[i, points_col] * z_drs[i] for i in d_idx)
+        obj += (drs_multiplier - 1.0) * lpSum(drivers.loc[i, points_col] * z_drs[i] for i in d_idx) 
 
-    prob += obj
+    prob += obj #prob is just the optimization container
 
-    # Constraints
-    prob += lpSum(x_d[i] for i in d_idx) == n_drivers
-    prob += lpSum(x_c[j] for j in c_idx) == n_constructors
+    ###########Constraints#############
+    prob += lpSum(x_d[i] for i in d_idx) == n_drivers #the amount of drivers turned on needs to equal to n_drivers (5)
+    prob += lpSum(x_c[j] for j in c_idx) == n_constructors #the amount of constructors turned on needs to equal to n_constructors (2)
 
+
+    #the sum of the drivers' and constructors' costs that are picked needs to be less than budget
     prob += (
         lpSum(drivers.loc[i, "price"] * x_d[i] for i in d_idx)
         + lpSum(cons.loc[j, "price"] * x_c[j] for j in c_idx)
@@ -136,7 +150,7 @@ def optimize_team(
                 >= min_drivers_per_selected_constructor * x_c[j]
             )
 
-    # Solve
+    ########SOLVE############
     solver = PULP_CBC_CMD(msg=solver_msg)
     prob.solve(solver)
 
