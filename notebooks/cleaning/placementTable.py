@@ -158,7 +158,7 @@ def get_placement_df(years: list=[2023, 2024, 2025,2026]):
                 curr_race_result = curr_race_result.merge(curr_session_driver_info, how="left", on=["driver_number", "meeting_key", "session_key"]).rename(columns={"name_acronym": "driver"})
                 curr_race_result = curr_race_result.merge(session_info_df, how="left", on="session_key")
                 #cut down to only needed columns
-                curr_race_result = curr_race_result[["date_start", "driver", "driver_number", "position", "points", "gap_to_leader", "meeting_key", "session_key"]]
+                curr_race_result = curr_race_result[["date_start", "driver", "driver_number", "position", "points", "gap_to_leader", "meeting_key", "session_key", "dnf", "dns", "dsq"]]
 
                 all_results.append(curr_race_result)
 
@@ -170,6 +170,11 @@ def get_placement_df(years: list=[2023, 2024, 2025,2026]):
                 continue
 
     placements = pd.concat(all_results, ignore_index=True)
+
+    #Cleaning Placement Table
+    placements["date_start"] = pd.to_datetime(placements["date_start"], format="ISO8601")
+    placements["nc"] = 0
+
     return placements
 
 
