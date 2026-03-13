@@ -174,20 +174,32 @@ def optimize_team(
             )
 
     #Optional: Transfer aware constraints
+    # Optional: Transfer aware constraints
     if last_week_lineup is not None:
-        prior_drivers = set(last_week_lineup["drivers"])
-        prior_constructors = set(last_week_lineup["constructors"])
+        # Normalize prior lineup identifiers
+        prior_drivers = {
+            str(driver).strip().upper()
+            for driver in last_week_lineup["drivers"]
+        }
+        prior_constructors = {
+            str(constructor).strip().upper()
+            for constructor in last_week_lineup["constructors"]
+        }
+
+        # Normalize current driver identifiers for matching
+        drivers["driver_key"] = drivers["driver"].astype(str).str.strip().str.upper()
 
         for i in d_idx:
-            driver_name = drivers.loc[i, "driver"]
-            if driver_name in prior_drivers:
+            driver_key = drivers.loc[i, "driver_key"]
+            if driver_key in prior_drivers:
                 prob += t_d[i] == 0
             else:
                 prob += t_d[i] == x_d[i]
-        
+
+        # Use normalized constructor team_key for matching
         for j in c_idx:
-            constructor_name = cons.loc[j, "constructor"]
-            if constructor_name in prior_constructors:
+            constructor_key = cons.loc[j, "team_key"]
+            if constructor_key in prior_constructors:
                 prob += t_c[j] == 0
             else:
                 prob += t_c[j] == x_c[j]

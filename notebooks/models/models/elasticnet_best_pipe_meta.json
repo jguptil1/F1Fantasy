@@ -3,9 +3,9 @@
   "best_params": {
     "model__max_depth": 10,
     "model__min_samples_leaf": 5,
-    "model__n_estimators": 500
+    "model__n_estimators": 300
   },
-  "cv_mae": 10.12920113528687,
+  "cv_mae": 10.075223510804031,
   "features": [
     "year",
     "race_num",
@@ -19,6 +19,7 @@
     "points_last_five_avg",
     "ppm_last_5",
     "momentum",
+    "driver_elo",
     "price_increase",
     "price_decrease",
     "teammate_points_last5",
