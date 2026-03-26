@@ -605,10 +605,12 @@ if __name__ == "__main__":
     print(outputs["results_df"])
     print(f"Best model: {outputs['best_name']}")
     print(outputs["predictions"].head())
-    mae, rmse, baseline_pred = get_old_baselines(2)
-    print(f"Race 2 Baseline: MAE: {mae}, RMSE: {rmse}, baseline_pred: {baseline_pred}")
-    mae, rmse, baseline_pred = get_old_baselines(3)
-    print(f"Race 3 Baseline: MAE: {mae}, RMSE: {rmse}, baseline_pred: {baseline_pred}")
+    
+    
+    #mae, rmse, baseline_pred = get_old_baselines(2)
+    #print(f"Race 2 Baseline: MAE: {mae}, RMSE: {rmse}, baseline_pred: {baseline_pred}")
+    #mae, rmse, baseline_pred = get_old_baselines(3)
+    #print(f"Race 3 Baseline: MAE: {mae}, RMSE: {rmse}, baseline_pred: {baseline_pred}")
 
 
 
