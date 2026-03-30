@@ -13,3 +13,10 @@
 11,2026,2,COL,driver,6.4,18.0,ALP,no
 12,2026,2,FER,constructor,23.6,119.0,FER,no
 13,2026,2,HAS,constructor,8.0,65.0,HAS,no
+14,2026,3,ANT,driver,23.8,50.0,MER,yes
+15,2026,3,LEC,driver,23.4,31.0,FER,no
+16,2026,3,HUL,driver,5.6,10.0,AUD,no
+17,2026,3,LAW,driver,6.9,10.0,RB,no
+18,2026,3,BOT,driver,4.7,2.0,CAD,no
+19,2026,3,MER,constructor,29.9,92.0,MER,no
+20,2026,3,AUD,constructor,5.4,23.0,AUD,no

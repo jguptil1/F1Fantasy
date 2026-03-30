@@ -1,5 +1,7 @@
 ,Race_team,year,race,constructor_1,constructor_2,driver_1,driver_2,driver_3,driver_4,driver_5,bonus_driver,team
 0,1_Guppies,2026,1,FER,RB,VER,LEC,HUL,COL,LAW,VER,Guppies
 1,1_Guppies2,2026,1,MCL,RB,VER,HAD,HUL,COL,LAW,VER,Guppies2
-2,1_Guppies,2026,2,MER,RB,VER,BEA,HUL,COL,LAW,VER,Guppies
-3,1_Guppies2,2026,2,MER,RB,VER,BEA,LIN,BOR,GAS,VER,Guppies2
+2,2_Guppies,2026,2,MER,RB,VER,BEA,HUL,COL,LAW,VER,Guppies
+3,2_Guppies2,2026,2,MER,RB,VER,BEA,LIN,BOR,GAS,VER,Guppies2
+4,3_Guppies,2026,3,MER,RB,RUS,BEA,HAD,HUL,LAW,RUS,Guppies
+5,3_Guppies2,2026,3,MER,RB,PIA,BEA,LIN,BOR,GAS,PIA,Guppies2
