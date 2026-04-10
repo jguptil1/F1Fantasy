@@ -176,7 +176,7 @@ def clean_raw_sessions(df):
 
 
 #writing the staged table to the database
-def build_stage_meetings_controller():
+def build_stage_sessions_controller():
 
     raw_df = pull_raw_sessions()
 
@@ -196,10 +196,28 @@ def build_stage_meetings_controller():
     return result
 
 
+############################Pipeline Controller###############
 
+def sessions_pipeline(update:bool):
 
+    '''
+    update toggle helps with decreasing API Call volume
+    '''
 
+    if not update:
+        #building and writing the raw table
+        build_raw_race_sessions_controller(years = [2023,2024,2025,2026])
 
+        #stage
+        build_stage_sessions_controller()
+
+    else:
+        #building and writing the raw table
+        update_raw_race_sessions_controller(year = 2026)
+
+        #stage
+        build_stage_sessions_controller()
+ 
 
 
 
@@ -207,4 +225,4 @@ def build_stage_meetings_controller():
 
 if __name__ == "__main__":
     build_raw_race_sessions_controller()
-    build_stage_meetings_controller()
+    build_stage_sessions_controller()

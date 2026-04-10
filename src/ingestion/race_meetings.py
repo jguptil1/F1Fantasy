@@ -224,7 +224,7 @@ def meetings_pipeline(update:bool):
         update_raw_race_meetings_controller(year = 2026)
 
         #stage
-        build_raw_race_meetings_controller()
+        build_stage_meetings_controller()
  
 
 
