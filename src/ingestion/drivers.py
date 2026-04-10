@@ -113,20 +113,20 @@ def append_raw_drivers_table(df):
 def build_raw_drivers_table_controller():
     session_keys = get_session_keys()
 
-    compiled_race_drivers_df = pd.DataFrame()
+    compiled_session_drivers_df = pd.DataFrame()
     for session in session_keys:
         session_drivers_df = get_raw_drivers(session)
 
         if session_drivers_df.empty:
             continue
 
-        compiled_race_sessions_df = pd.concat(
-            [compiled_race_drivers_df, session_drivers_df],
+        compiled_session_drivers_df = pd.concat(
+            [compiled_session_drivers_df, session_drivers_df],
             ignore_index=True
         )
 
     
-    write_raw_drivers_table(compiled_race_sessions_df)
+    write_raw_drivers_table(compiled_session_drivers_df)
 
 
 
@@ -137,20 +137,20 @@ def update_raw_drivers_table_controller(num):
 
     session_keys = get_last_n_sessions(num)
 
-    compiled_race_drivers_df = pd.DataFrame()
+    compiled_session_drivers_df = pd.DataFrame()
     for session in session_keys:
         session_drivers_df = get_raw_drivers(session)
 
         if session_drivers_df.empty:
             continue
 
-        compiled_race_sessions_df = pd.concat(
-            [compiled_race_drivers_df, session_drivers_df],
+        compiled_session_drivers_df = pd.concat(
+            [compiled_session_drivers_df, session_drivers_df],
             ignore_index=True
         )
 
     
-    append_raw_drivers_table(compiled_race_sessions_df)
+    append_raw_drivers_table(compiled_session_drivers_df)
 
 
 
@@ -243,9 +243,5 @@ def drivers_pipeline(update:bool, amount_to_update=15):
  
 
 
-
-if __name__ == "__main__":
-
-    drivers_pipeline(update=False)
 
 

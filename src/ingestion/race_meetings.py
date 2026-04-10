@@ -124,12 +124,13 @@ def build_raw_race_meetings_controller(years = [2023, 2024, 2025, 2026]):
 def update_raw_race_meetings_controller(year = 2026): 
     compiled_race_sessions_df = pd.DataFrame()
 
-    for year in years:
-        year_df = get_raw_meetings(year)
-        compiled_race_sessions_df = pd.concat(
-            [compiled_race_sessions_df, year_df],
-            ignore_index=True
-        )
+    print(f'Compiling race meetings for year: {year}')   
+    year_df = get_raw_meetings(year)
+
+    compiled_race_sessions_df = pd.concat(
+        [compiled_race_sessions_df, year_df],
+        ignore_index=True
+    )
 
     
     append_raw_meetings_table(compiled_race_sessions_df)
@@ -240,8 +241,4 @@ def meetings_pipeline(update:bool):
         build_stage_meetings_controller()
  
 
-
-
-if __name__ == "__main__":
-    meetings_pipeline(update=False)
     

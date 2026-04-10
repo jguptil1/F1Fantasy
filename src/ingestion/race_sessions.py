@@ -123,20 +123,17 @@ def build_raw_race_sessions_controller(years = [2023, 2024, 2025, 2026]):
 
     write_raw_sessions_table(compiled_race_sessions_df)
 
-def update_raw_race_sessions_controller(years = 2026):
+def update_raw_race_sessions_controller(year = 2026):
     compiled_race_sessions_df = pd.DataFrame()
 
-    for year in years:
-        print(f'Compiling year: {year}')
-        race_session_df = get_raw_race_session(year)
+    print(f'Compiling race sessions for year: {year}')
+    race_session_df = get_raw_race_session(year)
+        
 
-        if race_session_df.empty:
-                continue
-
-        compiled_race_sessions_df = pd.concat(
-            [compiled_race_sessions_df, race_session_df],
-            ignore_index=True
-        )
+    compiled_race_sessions_df = pd.concat(
+        [compiled_race_sessions_df, race_session_df],
+        ignore_index=True
+    )
 
 
     append_raw_sessions_table(compiled_race_sessions_df)
@@ -239,7 +236,3 @@ def sessions_pipeline(update:bool):
 
 
 
-
-
-if __name__ == "__main__":
-    sessions_pipeline(update=False)
