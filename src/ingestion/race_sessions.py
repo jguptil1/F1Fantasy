@@ -66,7 +66,7 @@ def get_raw_race_session(year, max_retries = 10, sleep_seconds=2):
     )
 
 
-#LOAD
+#HUGE WRITE
 def write_raw_sessions_table(df):
 
     con = duckdb.connect("data/database/f1_fantasy.duckdb")
@@ -75,6 +75,24 @@ def write_raw_sessions_table(df):
 
     result = con.execute("""
     CREATE OR REPLACE TABLE raw_sessions_table AS
+    SELECT *
+    FROM sessions_raw_df_temp
+    """)
+
+    con.close()
+
+    return result
+
+
+#APPEND
+def append_raw_sessions_table(df):
+
+    con = duckdb.connect("data/database/f1_fantasy.duckdb")
+
+    con.register("sessions_raw_df_temp", df)
+
+    result = con.execute("""
+    INSERT INTO raw_sessions_table
     SELECT *
     FROM sessions_raw_df_temp
     """)
@@ -121,7 +139,7 @@ def update_raw_race_sessions_controller(years = 2026):
         )
 
 
-    write_raw_sessions_table(compiled_race_sessions_df)
+    append_raw_sessions_table(compiled_race_sessions_df)
 
 
 
@@ -224,5 +242,4 @@ def sessions_pipeline(update:bool):
 
 
 if __name__ == "__main__":
-    build_raw_race_sessions_controller()
-    build_stage_sessions_controller()
+    sessions_pipeline(update=False)

@@ -76,15 +76,28 @@ def get_unique_meeting_ids_raw_table():
 #LOAD
 def write_raw_meetings_table(df):
 
-    con = duckdb.connect("data/database/f1_fantasy.duckdb")
-
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
         
+        con.register("raw_meetings_df_temp", df)
 
         result = con.execute("""
         CREATE OR REPLACE TABLE raw_meetings_table AS
         SELECT *
-        FROM df
+        FROM raw_meetings_df_temp
+        """)
+
+
+#LOAD
+def append_raw_meetings_table(df):
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+
+        con.register("raw_meetings_df_temp", df)
+
+        result = con.execute("""
+        INSERT INTO raw_meetings_table
+        SELECT *
+        FROM raw_meetings_df_temp
         """)
 
 #RAW CONTROLLER
@@ -119,7 +132,7 @@ def update_raw_race_meetings_controller(year = 2026):
         )
 
     
-    write_raw_meetings_table(compiled_race_sessions_df)
+    append_raw_meetings_table(compiled_race_sessions_df)
 
 ##########################Staging Layer#######################
 

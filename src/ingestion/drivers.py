@@ -7,12 +7,26 @@ import pandas as pd
 
 
 
+"""
+
+This table's grain is each driver for all of the unique race sessions in the staged race session table
+
+"""
+
+
 ##################################Ingestion Layer########################################
 
 
 """
 looks like the api params are based on session keys
 """
+
+#helper function to read the session table
+def read_sessions_table():
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+        result = con.execute("SELECT * FROM raw_sessions_table").df()
+        return result
+
 
 #helper function to get all of the unique session keys
 def get_session_keys():
@@ -22,12 +36,11 @@ def get_session_keys():
     return result
 
 
+def get_last_n_sessions(n):
+    con = duckdb.connect("data/database/f1_fantasy.duckdb")
+    result = con.execute(f'SELECT session_key FROM staged_race_sessions_table ORDER BY date_start DESC LIMIT {n}').df()["session_key"].tolist()
 
-def get_session_drivers(session_key):
-
-    '''
-    collect the unique drivers for a given racing session
-    '''
+    return result
 
 #API Caller
 def get_raw_drivers(session_key, max_retries = 10, sleep_seconds=2):
@@ -60,41 +73,179 @@ def get_raw_drivers(session_key, max_retries = 10, sleep_seconds=2):
             continue
             
         response.raise_for_status()
+        print(f'Fetched: {session_key}')
         return pd.DataFrame(response.json())
     
     raise requests.exceptions.HTTPError(
         f"429 persisted after {max_retries} retries for session_key={session_key}",
         response=response
     )
-    
+
+
+def write_raw_drivers_table(df):
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+
+        con.register("sessions_drivers_df_temp", df)
+
+        result = con.execute("""
+        CREATE OR REPLACE TABLE raw_drivers_table AS
+        SELECT *
+        FROM sessions_drivers_df_temp
+        """)
+
+
+def append_raw_drivers_table(df):
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+
+        con.register("sessions_drivers_df_temp", df)
+
+        con.execute("""
+        INSERT INTO raw_drivers_table
+        SELECT *
+        FROM sessions_drivers_df_temp
+        """)
 
 
 
 
-def build_raw_drivers_table():
+def build_raw_drivers_table_controller():
     session_keys = get_session_keys()
 
-
-    compiled_race_sessions_df = pd.DataFrame()
+    compiled_race_drivers_df = pd.DataFrame()
     for session in session_keys:
         session_drivers_df = get_raw_drivers(session)
 
-        if session_drivers_df.isempty():
+        if session_drivers_df.empty:
             continue
 
+        compiled_race_sessions_df = pd.concat(
+            [compiled_race_drivers_df, session_drivers_df],
+            ignore_index=True
+        )
+
+    
+    write_raw_drivers_table(compiled_race_sessions_df)
 
 
 
-#helper function to read the session table
+def update_raw_drivers_table_controller(num):
+    """
+    will only update with the last 15 sessions to limit call volume and to increase speed
+    """
 
-def read_meeting_table():
-    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-        result = con.execute("SELECT * FROM raw_sessions_table").df()
-        return result
+    session_keys = get_last_n_sessions(num)
 
+    compiled_race_drivers_df = pd.DataFrame()
+    for session in session_keys:
+        session_drivers_df = get_raw_drivers(session)
+
+        if session_drivers_df.empty:
+            continue
+
+        compiled_race_sessions_df = pd.concat(
+            [compiled_race_drivers_df, session_drivers_df],
+            ignore_index=True
+        )
+
+    
+    append_raw_drivers_table(compiled_race_sessions_df)
+
+
+
+##########################Staging Layer#######################
+
+#rename columns
+#standardize data types
+#filter unwanted rows/columns
+    #testing and canceled events
+#deduplicate
+#reshape wide to long
+#standardize names/codes
+#add simple derived fields needed for joins
+#align grains
+#prepare keys for warehouse layer
+
+
+#helper functions
+
+#pull in the raw file
+def pull_raw_drivers():
+
+    con = duckdb.connect("data/database/f1_fantasy.duckdb")
+    result = con.execute("SELECT * FROM raw_drivers_table").df()
+
+    return result
+
+#cleaning the raw file
+def clean_raw_drivers(df):
+
+    """
+    1. dedup
+    2. filter rows and cols
+    3. data type conversions
+    
+    """
+
+    #dedup
+    df = df.drop_duplicates(subset=["meeting_key", "session_key", "full_name"])
+
+    #filter cols
+    cols_to_keep = ["meeting_key", "session_key", "driver_number", "full_name", "name_acronym", "team_name", "first_name", "last_name"]
+    df = df[[col for col in cols_to_keep if col in df.columns]]
+
+    return df
+
+
+#writing the staged table to the database
+def build_stage_drivers_controller():
+
+    raw_df = pull_raw_drivers()
+
+    stage_df = clean_raw_drivers(raw_df)
+
+    con = duckdb.connect("data/database/f1_fantasy.duckdb")
+    con.register("drivers_staged_df_temp", stage_df)
+
+    result = con.execute("""
+        CREATE OR REPLACE TABLE staged_session_drivers_table AS
+        SELECT *
+        FROM drivers_staged_df_temp
+        """)
+
+    con.close()
+
+    return result
+
+
+############################Pipeline Controller###############
+
+def drivers_pipeline(update:bool, amount_to_update=15):
+
+    '''
+    update toggle helps with decreasing API Call volume
+    '''
+
+    if not update:
+        #building and writing the raw table
+        build_raw_drivers_table_controller()
+
+        #stage
+        build_stage_drivers_controller()
+
+    else:
+        #building and writing the raw table
+        update_raw_drivers_table_controller(amount_to_update)
+
+        #stage
+        build_stage_drivers_controller()
+ 
 
 
 
 if __name__ == "__main__":
-    session_keys = get_session_keys()
-    print(session_keys)
+
+    drivers_pipeline(update=False)
+
+
