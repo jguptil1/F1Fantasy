@@ -9,11 +9,16 @@ import race_sessions
 
 #2. update or build race sessions table 
 
+#3. update or build drivers table
+
+
+
+
 
 
 
 def main():
-    
+
 
 if __name__ == "__main__":
     #build_raw_race_meetings_controller()

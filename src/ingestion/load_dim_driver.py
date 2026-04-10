@@ -54,7 +54,8 @@ def get_driver_names():
         meeting_keys.append(meeting_df["meeting_key"].drop_duplicates().tolist())
     
 
-    
+    #temp
+    meeting_keys = [1270]
     race_session_keys = []
     for meeting_key in meeting_keys:
         response = urlopen(f'https://api.openf1.org/v1/sessions?meeting_key={meeting_key}')
