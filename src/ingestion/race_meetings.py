@@ -51,7 +51,7 @@ def get_raw_meetings(year, max_retries = 10, sleep_seconds=2):
         response=response
     )
 
-
+#QA
 def read_raw_meetings_table():
 
     con = duckdb.connect("data/database/f1_fantasy.duckdb")
@@ -59,7 +59,7 @@ def read_raw_meetings_table():
 
     return result
 
-
+#QA
 def get_unique_years_in_raw_meetings_table():
     con = duckdb.connect("data/database/f1_fantasy.duckdb")
     result = con.execute("SELECT DISTINCT year FROM raw_meetings_table").fetchall()
@@ -67,7 +67,7 @@ def get_unique_years_in_raw_meetings_table():
     return years
 
 
-#API CALL
+#helper function to read meeting_key table
 def get_unique_meeting_ids_raw_table():
     con = duckdb.connect("data/database/f1_fantasy.duckdb")
     result = con.execute("SELECT DISTINCT meeting_key FROM raw_meetings_table")
@@ -78,17 +78,14 @@ def write_raw_meetings_table(df):
 
     con = duckdb.connect("data/database/f1_fantasy.duckdb")
 
-    con.register("meetings_raw_df_temp", df)
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+        
 
-    result = con.execute("""
-    CREATE OR REPLACE TABLE raw_meetings_table AS
-    SELECT *
-    FROM meetings_df_temp
-    """)
-
-    con.close()
-
-    return result
+        result = con.execute("""
+        CREATE OR REPLACE TABLE raw_meetings_table AS
+        SELECT *
+        FROM df
+        """)
 
 #RAW CONTROLLER
 def build_raw_race_meetings_controller(years = [2023, 2024, 2025, 2026]):
@@ -216,28 +213,22 @@ def meetings_pipeline(update:bool):
     '''
 
     if not update:
-        #building the raw table
-        raw_df = build_raw_race_meetings_controller(2023,2024,2025,2026)
-        write_raw_meetings_table(raw_df)
+        #building and writing the raw table
+        build_raw_race_meetings_controller(years = [2023,2024,2025,2026])
 
         #stage
         build_stage_meetings_controller()
 
     else:
-        #building the raw table
-        raw_df = update_raw_race_meetings_controller(year = 2026)
-        write_raw_meetings_table(raw_df) #will contain dups
+        #building and writing the raw table
+        update_raw_race_meetings_controller(year = 2026)
 
         #stage
         build_raw_race_meetings_controller()
-
+ 
 
 
 
 if __name__ == "__main__":
-    #build_raw_race_meetings_controller()
-    build_stage_meetings_controller()
-    # show_driver_table()
-    #race_sessions_database_controller()
-    #print(read_meetings_table())
+    meetings_pipeline(update=False)
     
