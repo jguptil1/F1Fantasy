@@ -1,0 +1,44 @@
+name: f1_dev
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+
+  # Core data
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - pyarrow
+  - openpyxl
+
+  # ML / modeling
+  - scikit-learn
+  - scipy
+  - statsmodels
+  - lightgbm
+  - joblib
+
+  # Database
+  - duckdb
+
+  # Notebooks / dev
+  - jupyter
+  - ipykernel
+  - ipython
+
+  # Utilities
+  - tqdm
+  - pyyaml
+
+  - pip
+
+  - pip:
+      # F1 / APIs
+      - fastf1
+      - requests
+      - requests-cache
+
+      # dashboards
+      - plotly
+      - dash
