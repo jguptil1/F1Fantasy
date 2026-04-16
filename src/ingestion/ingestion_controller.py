@@ -24,6 +24,8 @@ def api_tables_update():
 
 
 
+
+
 def main():
 
     user_input = str(input("Would you like to build/rebuild (b) the api tables or would you like to update (u)?: "))
@@ -34,6 +36,9 @@ def main():
         api_tables_build()
     else:
         print("Invalid input")
+        drivers.build_driver_dim_table()
+
+
 
 if __name__ == "__main__":
     main()

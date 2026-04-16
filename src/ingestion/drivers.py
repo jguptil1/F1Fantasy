@@ -218,6 +218,36 @@ def build_stage_drivers_controller():
 
     return result
 
+###################warehousing layer################################
+
+"""
+utilimate goal is to build a dim_driver_table
+
+the grain level for this table is one row per driver
+
+table features: driver_id, driver_name, name_accronym, first_name, last_name
+
+"""
+
+def build_driver_dim_table():
+
+    #pulling the drivers_staged_table
+
+
+  with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+    driver_staged = con.execute("""
+        SELECT DISTINCT
+            full_name as driver_name,
+            name_acronym
+        FROM staged_session_drivers_table
+    """).df()
+
+    return driver_staged
+    
+
+    
+
+
 
 ############################Pipeline Controller###############
 
@@ -235,13 +265,14 @@ def drivers_pipeline(update:bool, amount_to_update=15):
         build_stage_drivers_controller()
 
     else:
-        #building and writing the raw table
+        #appending and writing the raw table
         update_raw_drivers_table_controller(amount_to_update)
 
         #stage
         build_stage_drivers_controller()
+
+        #driver dim table
+        build_driver_dim_table()
+
+
  
-
-
-
-
