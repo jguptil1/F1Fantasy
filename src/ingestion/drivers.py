@@ -77,8 +77,7 @@ def get_raw_drivers(session_key, max_retries = 10, sleep_seconds=2):
         return pd.DataFrame(response.json())
     
     raise requests.exceptions.HTTPError(
-        f"429 persisted after {max_retries} retries for session_key={session_key}",
-        response=response
+        f"429 persisted after {max_retries} retries for session_key={session_key}"
     )
 
 
@@ -106,8 +105,6 @@ def append_raw_drivers_table(df):
         SELECT *
         FROM sessions_drivers_df_temp
         """)
-
-
 
 
 def build_raw_drivers_table_controller():
@@ -230,19 +227,46 @@ table features: driver_id, driver_name, name_accronym, first_name, last_name
 """
 
 def build_driver_dim_table():
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+        driver_pull = con.execute("""
+            SELECT DISTINCT
+                full_name AS driver_name,
+                name_acronym
+            FROM staged_session_drivers_table
+        """).df()
 
-    #pulling the drivers_staged_table
+        #this will only apply for the first build, all subsequent updates will take the max current id value and will add one. 
+        driver_pull = driver_pull.sort_values("driver_name").reset_index(drop=True)
+        driver_pull["driver_id"] = range(1, len(driver_pull) + 1)
+        driver_pull = driver_pull[["driver_id", "driver_name", "name_acronym"]]
+        
+
+        con.register("driver_pull_temp", driver_pull)
+
+        con.execute("""
+            SELECT *
+            FROM dim_driver
+        """).df()
 
 
-  with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-    driver_staged = con.execute("""
-        SELECT DISTINCT
-            full_name as driver_name,
-            name_acronym
-        FROM staged_session_drivers_table
-    """).df()
+def update_driver_dim_table():
 
-    return driver_staged
+
+
+  
+
+
+def read_drivers():
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+        driver_table = con.execute("""
+            SELECT *
+            FROM driver_table
+        """).df()
+
+    return driver_table
+
+
+
     
 
     
