@@ -30,15 +30,29 @@ def read_sessions_table():
 
 #helper function to get all of the unique session keys
 def get_session_keys():
-    con = duckdb.connect("data/database/f1_fantasy.duckdb")
-    result = con.execute("SELECT DISTINCT session_key FROM staged_race_sessions_table").df()["session_key"].tolist()
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+        result = con.execute("SELECT DISTINCT session_key FROM staged_race_sessions_table").df()["session_key"].tolist()
 
     return result
 
 
 def get_last_n_sessions(n):
-    con = duckdb.connect("data/database/f1_fantasy.duckdb")
-    result = con.execute(f'SELECT session_key FROM staged_race_sessions_table ORDER BY date_start DESC LIMIT {n}').df()["session_key"].tolist()
+
+    """
+    returns the last n unique race_session ids
+    """
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+        result = con.execute(f"""
+            SELECT session_key
+            FROM (
+                SELECT session_key, MAX(date_start) AS max_date_start
+                FROM staged_race_sessions_table
+                GROUP BY session_key
+            )
+            ORDER BY max_date_start DESC
+            LIMIT {n}
+            """).df()["session_key"].tolist()
 
     return result
 
@@ -132,22 +146,48 @@ def update_raw_drivers_table_controller(num):
     will only update with the last 15 sessions to limit call volume and to increase speed
     """
 
+
+    #this pulls all n last sessions
     session_keys = get_last_n_sessions(num)
 
-    compiled_session_drivers_df = pd.DataFrame()
+
+    #this builds the temp df that needs to eventually get slimmed down based on what unique meeting_key+session_key+full_name grain exists
+    temp_compiled_session_drivers_df = pd.DataFrame()
     for session in session_keys:
         session_drivers_df = get_raw_drivers(session)
 
         if session_drivers_df.empty:
             continue
 
-        compiled_session_drivers_df = pd.concat(
-            [compiled_session_drivers_df, session_drivers_df],
+        temp_compiled_session_drivers_df = pd.concat(
+            [temp_compiled_session_drivers_df, session_drivers_df],
             ignore_index=True
         )
 
     
-    append_raw_drivers_table(compiled_session_drivers_df)
+    temp_compiled_session_drivers_df = temp_compiled_session_drivers_df.drop_duplicates(subset=["meeting_key", "session_key", "full_name"])
+
+
+    #need to filter the temp down to only the records that are not present in the raw table
+    #these will then get appended to the raw table
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+
+
+        con.register("temp_compiled_session_drivers_df", temp_compiled_session_drivers_df)
+
+        new_raw_records = con.execute("""
+            SELECT t.*
+            FROM temp_compiled_session_drivers_df t
+            LEFT JOIN raw_drivers_table r
+                ON t.meeting_key = r.meeting_key
+               AND t.session_key = r.session_key
+               AND t.full_name = r.full_name
+            WHERE r.full_name IS NULL
+        """).df()
+
+    if not new_raw_records.empty:
+        append_raw_drivers_table(new_raw_records)
 
 
 
@@ -170,8 +210,8 @@ def update_raw_drivers_table_controller(num):
 #pull in the raw file
 def pull_raw_drivers():
 
-    con = duckdb.connect("data/database/f1_fantasy.duckdb")
-    result = con.execute("SELECT * FROM raw_drivers_table").df()
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+        result = con.execute("SELECT * FROM raw_drivers_table").df()
 
     return result
 
@@ -202,16 +242,15 @@ def build_stage_drivers_controller():
 
     stage_df = clean_raw_drivers(raw_df)
 
-    con = duckdb.connect("data/database/f1_fantasy.duckdb")
-    con.register("drivers_staged_df_temp", stage_df)
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+        con.register("drivers_staged_df_temp", stage_df)
 
-    result = con.execute("""
-        CREATE OR REPLACE TABLE staged_session_drivers_table AS
-        SELECT *
-        FROM drivers_staged_df_temp
-        """)
+        result = con.execute("""
+            CREATE OR REPLACE TABLE staged_session_drivers_table AS
+            SELECT *
+            FROM drivers_staged_df_temp
+            """)
 
-    con.close()
 
     return result
 
@@ -228,48 +267,89 @@ table features: driver_id, driver_name, name_accronym, first_name, last_name
 
 def build_driver_dim_table():
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-        driver_pull = con.execute("""
+
+        #pulling whatever drivers are in staged table
+        staged_driver_pull = con.execute("""
             SELECT DISTINCT
                 full_name AS driver_name,
                 name_acronym
             FROM staged_session_drivers_table
         """).df()
 
-        #this will only apply for the first build, all subsequent updates will take the max current id value and will add one. 
-        driver_pull = driver_pull.sort_values("driver_name").reset_index(drop=True)
-        driver_pull["driver_id"] = range(1, len(driver_pull) + 1)
-        driver_pull = driver_pull[["driver_id", "driver_name", "name_acronym"]]
+        #this will only apply for the first build, all subsequent updates will take the max current id value present and will add one. 
+        staged_driver_pull = staged_driver_pull.sort_values("driver_name").reset_index(drop=True)
+        staged_driver_pull["driver_id"] = range(1, len(staged_driver_pull) + 1)
+        staged_driver_pull = staged_driver_pull[["driver_id", "driver_name", "name_acronym"]]
         
 
-        con.register("driver_pull_temp", driver_pull)
+        con.register("driver_pull_temp", staged_driver_pull)
 
         con.execute("""
-            SELECT *
-            FROM dim_driver
-        """).df()
+            CREATE OR REPLACE TABLE dim_driver AS
+            SELECT driver_id, driver_name, name_acronym
+            FROM driver_pull_temp
+        """)
 
 
 def update_driver_dim_table():
 
+    '''
+    Find new drivers in staged_session_drivers_table
+    assign new driver_ids, and append them to dim_driver
+    '''
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
 
 
-  
+        current_dim_table = con.execute("""
+            SELECT *
+            FROM dim_driver
+            """).df()
+
+
+        new_driver_stage_pull = con.execute("""
+            SELECT DISTINCT 
+                s.full_name as driver_name,
+                s.name_acronym
+            FROM staged_session_drivers_table as s
+            LEFT JOIN dim_driver as d
+                on s.name_acronym = d.name_acronym
+            WHERE d.name_acronym IS NULL
+                                            
+        """).df()
+
+        
+        if not new_driver_stage_pull.empty:
+
+            current_max = current_dim_table["driver_id"].max()
+
+            if pd.isna(current_max):
+                current_max=0
+
+
+            new_driver_stage_pull["driver_id"] = range(
+                current_max + 1,
+                current_max + 1 + len(new_driver_stage_pull)
+            )
+
+            #appending the new records into the table
+            con.register("new_drivers_df_temp", new_driver_stage_pull)
+
+            con.execute("""
+            INSERT INTO dim_driver
+            SELECT driver_id, driver_name, name_acronym
+            FROM new_drivers_df_temp
+            """)
 
 
 def read_drivers():
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
         driver_table = con.execute("""
             SELECT *
-            FROM driver_table
+            FROM dim_driver
         """).df()
 
     return driver_table
-
-
-
-    
-
-    
 
 
 
@@ -288,6 +368,9 @@ def drivers_pipeline(update:bool, amount_to_update=15):
         #stage
         build_stage_drivers_controller()
 
+        #warehouse
+        build_driver_dim_table()
+
     else:
         #appending and writing the raw table
         update_raw_drivers_table_controller(amount_to_update)
@@ -295,8 +378,8 @@ def drivers_pipeline(update:bool, amount_to_update=15):
         #stage
         build_stage_drivers_controller()
 
-        #driver dim table
-        build_driver_dim_table()
+        #update warehouse
+        update_driver_dim_table()
 
 
  

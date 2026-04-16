@@ -11,8 +11,8 @@ import drivers
 
 
 def api_tables_build():
-    race_meetings.meetings_pipeline(update=False)
-    race_sessions.sessions_pipeline(update=False)
+    #race_meetings.meetings_pipeline(update=False)
+    #race_sessions.sessions_pipeline(update=False)
     drivers.drivers_pipeline(update=False)
 
 

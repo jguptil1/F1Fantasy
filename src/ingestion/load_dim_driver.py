@@ -1,3 +1,16 @@
+
+"""
+
+Warning this is deprecated. please use the drivers.py and the ingestion_controller.py modules
+
+
+"""
+
+
+
+
+
+
 import duckdb
 import pandas as pd
 
