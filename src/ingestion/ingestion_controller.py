@@ -24,19 +24,39 @@ def api_tables_update():
 
 
 
+def run_api_pipeline(plan: dict):
+    #meetings
+    if plan.get("meetings") == "build":
+        race_meetings.meetings_pipeline(update=False)
+    elif plan.get("meetings") == "update":
+        race_meetings.meetings_pipeline(update=True)
+
+    #sessions
+    if plan.get("sessions") == "build":
+        race_sessions.sessions_pipeline(update=False)
+    elif plan.get("sessions") == "update":
+        race_sessions.sessions_pipeline(update=True)
+
+    #drivers
+    if plan.get("drivers") == "build":
+        drivers.drivers_pipeline(update=False)
+    elif plan.get("drivers") == "update":
+        drivers.drivers_pipeline(update=True)
+
+
+
+
 
 
 def main():
 
-    user_input = str(input("Would you like to build/rebuild (b) the api tables or would you like to update (u)?: "))
-    
-    if (user_input.lower() == "u"):
-        api_tables_update()
-    elif (user_input.lower() == "b"):
-        api_tables_build()
-    else:
-        print("Invalid input")
-        drivers.build_driver_dim_table()
+    plan = {
+       #"meetings": "update",
+       # "sessions":"update",
+        "drivers": "build"
+    }
+
+    run_api_pipeline(plan)
 
 
 

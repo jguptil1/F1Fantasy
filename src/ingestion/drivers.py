@@ -270,10 +270,11 @@ def build_driver_dim_table():
 
         #pulling whatever drivers are in staged table
         staged_driver_pull = con.execute("""
-            SELECT DISTINCT
+            SELECT
                 full_name AS driver_name,
-                name_acronym
+                MIN(name_acronym) as name_acronym
             FROM staged_session_drivers_table
+            GROUP BY full_name
         """).df()
 
         #this will only apply for the first build, all subsequent updates will take the max current id value present and will add one. 
@@ -313,8 +314,8 @@ def update_driver_dim_table():
                 s.name_acronym
             FROM staged_session_drivers_table as s
             LEFT JOIN dim_driver as d
-                on s.name_acronym = d.name_acronym
-            WHERE d.name_acronym IS NULL
+                on s.full_name = d.driver_name
+            WHERE d.driver_name IS NULL
                                             
         """).df()
 
