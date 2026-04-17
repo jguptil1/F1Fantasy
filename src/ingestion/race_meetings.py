@@ -45,8 +45,7 @@ def get_raw_meetings(year, max_retries = 10, sleep_seconds=2):
         return pd.DataFrame(response.json())
     
     raise requests.exceptions.HTTPError(
-        f"429 persisted after {max_retries} retries for year={year}",
-        response=response
+        f"429 persisted after {max_retries} retries for year={year}"
     )
 
 #QA

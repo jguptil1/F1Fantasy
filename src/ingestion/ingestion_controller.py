@@ -59,7 +59,7 @@ def run_api_pipeline(plan: dict):
 def main():
 
     plan = {
-        "meetings": "build"
+        #"meetings": "update" #this update includes updating the dim_race table
         #"sessions":"update",
         #"drivers": "update",
         #"constructors": "update"
