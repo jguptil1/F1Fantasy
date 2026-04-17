@@ -1,6 +1,7 @@
 import race_meetings
 import race_sessions
 import drivers
+import constructor
 
 
 #1. update or build race meetings table 
@@ -44,6 +45,13 @@ def run_api_pipeline(plan: dict):
         drivers.drivers_pipeline(update=True)
 
 
+    #constructors
+    if plan.get("constructors") == "build":
+        constructor.constructors_pipeline(update=False)
+    elif plan.get("constructors") == "update":
+        constructor.constructors_pipeline(update=True) 
+
+
 
 
 
@@ -53,7 +61,8 @@ def main():
     plan = {
        #"meetings": "update",
        # "sessions":"update",
-        "drivers": "build"
+        #"drivers": "build",
+        "constructors": "build"
     }
 
     run_api_pipeline(plan)
