@@ -215,10 +215,78 @@ def build_stage_meetings_controller():
 
     return result
 
+###########################Warehousing Layer####################
+
+
+def build_dim_race():
+    
+    #things that will need to be logically built:
+    #  race_id - complete
+    #  race_num for the given year - complete
+    #  is_sprint_weekend - complete
+
+
+    cols_to_keep = ["race_id", "year", "race_num", "race_name", "meeting_key", "country_name", "circuit_short_name", "race_date", "is_sprint_weekend"]
+
+
+    #read in the current staged meetings
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+
+            #pulling whatever races are in the staged table
+            staged_race_pull = con.execute("""
+                SELECT
+                    year,
+                    meeting_name as race_name,
+                    meeting_key,
+                    country_name, 
+                    circuit_short_name,
+                    date_start,
+                    date_end                    
+                FROM staged_race_meetings_table
+            """).df()
+
+
+            sprint_sessions = con.execute("""
+                SELECT DISTINCT
+                    meeting_key
+                FROM staged_race_sessions_table
+                WHERE session_type = 'Sprint'
+            """).df()["meeting_key"].to_list()
 
 
 
-############################Pipeline Controller###############
+            #this will only apply for the first build, all subsequent updates will take the max current id value present and will add one. 
+            staged_race_pull = staged_race_pull.sort_values(["year", "date_start"]).reset_index(drop=True)
+            staged_race_pull["race_id"] = range(1, len(staged_race_pull) + 1)
+            staged_race_pull["race_num"] = (
+                staged_race_pull.groupby("year").cumcount() + 1
+            )
+
+            staged_race_pull['is_sprint_weekend'] = staged_race_pull["meeting_key"].isin(sprint_sessions)
+            
+
+            con.register("race_pull_temp", staged_race_pull)
+
+            con.execute("""
+                CREATE OR REPLACE TABLE dim_race AS
+                SELECT
+                    race_id,
+                    year,
+                    race_num,
+                    race_name,
+                    meeting_key,
+                    country_name,
+                    circuit_short_name,
+                    date_start,
+                    date_end,
+                    is_sprint_weekend
+                FROM race_pull_temp
+            """)
+
+
+
+############################Pipeline Controller################
 
 def meetings_pipeline(update:bool):
 
@@ -228,10 +296,13 @@ def meetings_pipeline(update:bool):
 
     if not update:
         #building and writing the raw table
-        build_raw_race_meetings_controller(years = [2023,2024,2025,2026])
+        #build_raw_race_meetings_controller(years = [2023,2024,2025,2026])
 
         #stage
-        build_stage_meetings_controller()
+        #build_stage_meetings_controller()
+
+        #warehouse
+        build_dim_race()
 
     else:
         #building and writing the raw table
@@ -239,6 +310,9 @@ def meetings_pipeline(update:bool):
 
         #stage
         build_stage_meetings_controller()
+        
+        #warehouse
+        update_dim_race()
  
 
     

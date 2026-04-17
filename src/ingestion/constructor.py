@@ -215,7 +215,7 @@ def clean_raw_constructors(df):
 
 
 #writing the staged table to the database
-def build_stage_drivers_controller():
+def build_stage_constructors_controller():
 
     raw_df = pull_raw_constructors()
 
@@ -233,6 +233,7 @@ def build_stage_drivers_controller():
 
     return result
 
+
 ###################warehousing layer################################
 
 """
@@ -244,38 +245,40 @@ table features: driver_id, driver_name, name_accronym, first_name, last_name
 
 """
 
-def build_driver_dim_table():
+def build_constructor_dim_table():
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
 
         #pulling whatever drivers are in staged table
-        staged_driver_pull = con.execute("""
+        staged_constructor_pull = con.execute("""
             SELECT
-                full_name AS driver_name,
-                MIN(name_acronym) as name_acronym
-            FROM staged_session_drivers_table
-            GROUP BY full_name
+                year,
+                constructor_name
+                                
+                
+            FROM staged_session_constructors_table
+            GROUP BY year, constructor_name
         """).df()
 
         #this will only apply for the first build, all subsequent updates will take the max current id value present and will add one. 
-        staged_driver_pull = staged_driver_pull.sort_values("driver_name").reset_index(drop=True)
-        staged_driver_pull["driver_id"] = range(1, len(staged_driver_pull) + 1)
-        staged_driver_pull = staged_driver_pull[["driver_id", "driver_name", "name_acronym"]]
+        staged_constructor_pull = staged_constructor_pull.sort_values(["constructor_name", "year"]).reset_index(drop=True)
+        staged_constructor_pull["constructor_id"] = range(1, len(staged_constructor_pull) + 1)
+        staged_constructor_pull = staged_constructor_pull[["constructor_id", "year", "constructor_name"]]
         
 
-        con.register("driver_pull_temp", staged_driver_pull)
+        con.register("constructor_pull_temp", staged_constructor_pull)
 
         con.execute("""
-            CREATE OR REPLACE TABLE dim_driver AS
-            SELECT driver_id, driver_name, name_acronym
-            FROM driver_pull_temp
+            CREATE OR REPLACE TABLE dim_constructor AS
+            SELECT constructor_id, year, constructor_name
+            FROM constructor_pull_temp
         """)
 
 
-def update_driver_dim_table():
+def update_constructor_dim_table():
 
     '''
-    Find new drivers in staged_session_drivers_table
-    assign new driver_ids, and append them to dim_driver
+    Find new constructors in staged_session_constructors_table
+    assign new constructor_ids, and append them to dim_constructor
     '''
 
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
@@ -283,53 +286,54 @@ def update_driver_dim_table():
 
         current_dim_table = con.execute("""
             SELECT *
-            FROM dim_driver
+            FROM dim_constructor
             """).df()
 
 
-        new_driver_stage_pull = con.execute("""
+        new_constructor_stage_pull = con.execute("""
             SELECT DISTINCT 
-                s.full_name as driver_name,
-                s.name_acronym
-            FROM staged_session_drivers_table as s
-            LEFT JOIN dim_driver as d
-                on s.full_name = d.driver_name
-            WHERE d.driver_name IS NULL
+                s.year,
+                s.constructor_name
+            FROM staged_session_constructors_table as s
+            LEFT JOIN dim_constructor as d
+                ON s.constructor_name = d.constructor_name
+                AND s.year = d.year
+            WHERE d.constructor_name IS NULL
                                             
         """).df()
 
         
-        if not new_driver_stage_pull.empty:
+        if not new_constructor_stage_pull.empty:
 
-            current_max = current_dim_table["driver_id"].max()
+            current_max = current_dim_table["constructor_id"].max()
 
             if pd.isna(current_max):
                 current_max=0
 
 
-            new_driver_stage_pull["driver_id"] = range(
+            new_constructor_stage_pull["constructor_id"] = range(
                 current_max + 1,
-                current_max + 1 + len(new_driver_stage_pull)
+                current_max + 1 + len(new_constructor_stage_pull)
             )
 
             #appending the new records into the table
-            con.register("new_drivers_df_temp", new_driver_stage_pull)
+            con.register("new_constructors_df_temp", new_constructor_stage_pull)
 
             con.execute("""
-            INSERT INTO dim_driver
-            SELECT driver_id, driver_name, name_acronym
-            FROM new_drivers_df_temp
+            INSERT INTO dim_constructor
+            SELECT constructor_id, year, constructor_name
+            FROM new_constructors_df_temp
             """)
 
 
-def read_drivers():
+def read_constructors():
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-        driver_table = con.execute("""
+        constructor_table = con.execute("""
             SELECT *
-            FROM dim_driver
+            FROM dim_constructor
         """).df()
 
-    return driver_table
+    return constructor_table
 
 
 
@@ -346,18 +350,17 @@ def constructors_pipeline(update:bool, amount_to_update=15):
         #build_raw_constructors_table_controller()
 
         #stage
-        build_stage_drivers_controller()
+        #build_stage_constructors_controller()
 
         #warehouse
-        #build_driver_dim_table()
+        build_constructor_dim_table()
 
     else:
         #appending and writing the raw table
-        #update_raw_drivers_table_controller(amount_to_update)
+        update_raw_constructor_table_controller(amount_to_update)
 
         #stage
-        #build_stage_drivers_controller()
+        build_stage_constructors_controller()
 
         #update warehouse
-        #update_driver_dim_table()
-        return False
+        update_constructor_dim_table()
