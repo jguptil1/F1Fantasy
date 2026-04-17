@@ -59,10 +59,10 @@ def run_api_pipeline(plan: dict):
 def main():
 
     plan = {
-       #"meetings": "update",
-       # "sessions":"update",
-        #"drivers": "build",
-        "constructors": "build"
+        "meetings": "build"
+        #"sessions":"update",
+        #"drivers": "update",
+        #"constructors": "update"
     }
 
     run_api_pipeline(plan)
