@@ -5,6 +5,12 @@ import requests
 import time
 import pandas as pd
 
+import fastf1
+
+
+#cache location
+fastf1.Cache.enable_cache("data/cache/fastf1")
+
 
 
 """
@@ -15,85 +21,6 @@ This table's grain is Grain Level: meeting_key, session_key, team
 
 
 ##################################Ingestion Layer########################################
-
-
-"""
-looks like the api params are based on session keys
-"""
-
-#helper function to read the session table
-def read_sessions_table():
-    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-        result = con.execute("SELECT * FROM raw_sessions_table").df()
-        return result
-
-
-#helper function to get all of the unique session keys
-def get_session_keys():
-    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-        result = con.execute("SELECT DISTINCT session_key FROM staged_race_sessions_table").df()["session_key"].tolist()
-
-    return result
-
-
-def get_last_n_sessions(n):
-
-    """
-    returns the last n unique race_session ids
-    """
-
-    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-        result = con.execute(f"""
-            SELECT session_key
-            FROM (
-                SELECT session_key, MAX(date_start) AS max_date_start
-                FROM staged_race_sessions_table
-                GROUP BY session_key
-            )
-            ORDER BY max_date_start DESC
-            LIMIT {n}
-            """).df()["session_key"].tolist()
-
-    return result
-
-#API Caller
-def get_raw_constructors(session_key, max_retries = 10, sleep_seconds=2):
-
-    '''
-    this function creates a pandas dataframe of session info
-    returns: pandas dataframe
-    '''
-
-    url = "https://api.openf1.org/v1/championship_teams"
-    params = {
-        "session_key": session_key
-    }
-
-    #throttling call
-    for attempt in range(max_retries):
-        response = requests.get(url, params=params, timeout=30)
-
-
-        #not a valid session_key
-        if response.status_code == 404:
-            print(f"404 not found for session_key={session_key}. Skipping.")
-            return pd.DataFrame()
-        
-        #rate limit hit
-        if response.status_code == 429:
-            wait = sleep_seconds * (attempt +1)
-            print(f"Rate Limited on session_key={session_key}. Sleeping {wait} seconds")
-            time.sleep(wait)
-            continue
-            
-        response.raise_for_status()
-        print(f'Fetched: {session_key}')
-        return pd.DataFrame(response.json())
-    
-    raise requests.exceptions.HTTPError(
-        f"429 persisted after {max_retries} retries for session_key={session_key}"
-    )
-
 
 def write_raw_constructors_table(df):
 
@@ -120,52 +47,102 @@ def append_raw_constructors_table(df):
         FROM constructor_sessions_df_temp
         """)
 
+#API Caller
+def build_raw_constructors_table_controller(years=(2023, 2024, 2025, 2026)):
+    all_team_rows = []
 
-def build_raw_constructors_table_controller():
-    session_keys = get_session_keys()
 
-    compiled_session_constructors_df = pd.DataFrame()
-    for session in session_keys:
-        session_constructor_df = get_raw_constructors(session)
+    for year in years:
+        schedule = fastf1.get_event_schedule(year)
 
-        if session_constructor_df.empty:
-            continue
+        for _, event in schedule.iterrows():
+            try:
+                session = event.get_session("R")
+                session.load()
 
-        compiled_session_constructors_df = pd.concat(
-            [compiled_session_constructors_df, session_constructor_df],
-            ignore_index=True
-        )
+                results = session.results
 
+                if results is None or results.empty:
+                    continue
+
+                team_df = (
+                    results[["TeamName"]]
+                    .dropna()
+                    .drop_duplicates()
+                    .rename(columns={"TeamName": "constructor_name"})
+                )
+
+                team_df['year'] = year
+                team_df['event_name'] = event['EventName']
+                all_team_rows.append(team_df)
+            
+            except Exception as e:
+                print(f'Skipping {year} - {event["EventName"]}: {e}')
+                continue
+        
+    if not all_team_rows:
+        return pd.DataFrame(columns=["constructor_name", "year", "event_name"])
     
-    write_raw_constructors_table(compiled_session_constructors_df)
-
-
-
-def update_raw_drivers_table_controller(num):
-    """
-    will only update with the last 15 sessions to limit call volume and to increase speed
-    """
-
-
-    #this pulls all n last sessions
-    session_keys = get_last_n_sessions(num)
-
-
-    #this builds the temp df that needs to eventually get slimmed down based on what unique meeting_key+session_key+full_name grain exists
-    temp_compiled_session_constructors_df = pd.DataFrame()
-    for session in session_keys:
-        session_constructor_df = get_raw_constructors(session)
-
-        if session_constructor_df.empty:
-            continue
-
-        temp_compiled_session_constructors_df = pd.concat(
-            [temp_compiled_session_constructors_df, session_constructor_df],
-            ignore_index=True
-        )
-
+    combined = pd.concat(all_team_rows, ignore_index=True)
     
-    temp_compiled_session_constructors_df = temp_compiled_session_constructors_df.drop_duplicates(subset=["meeting_key", "session_key", "team_name"])
+    raw_constructor_source = (
+        combined[["constructor_name", "year", "event_name"]]
+        .drop_duplicates()
+        .sort_values("constructor_name")
+        .reset_index(drop=True)
+    )
+
+        
+    write_raw_constructors_table(raw_constructor_source)
+
+
+
+def update_raw_constructor_table_controller(year=2026):
+    """
+    will only update for the given year
+    """
+
+    all_team_rows = []
+
+    schedule = fastf1.get_event_schedule(year)
+
+    for _, event in schedule.iterrows():
+        try:
+            session = event.get_session("R")
+            session.load()
+
+            results = session.results
+
+            if results is None or results.empty:
+                continue
+
+            team_df = (
+                results[["TeamName"]]
+                .dropna()
+                .drop_duplicates()
+                .rename(columns={"TeamName": "constructor_name"})
+            )
+
+            team_df['year'] = year
+            team_df['event_name'] = event['EventName']
+            all_team_rows.append(team_df)
+        
+        except Exception as e:
+            print(f'Skipping {year} - {event["EventName"]}: {e}')
+            continue
+        
+    if not all_team_rows:
+        return pd.DataFrame(columns=["constructor_name", "year", "event_name"])
+    
+
+    combined = pd.concat(all_team_rows, ignore_index=True)
+    
+    raw_constructor_source = (
+        combined[["constructor_name", "year", "event_name"]]
+        .drop_duplicates()
+        .sort_values("constructor_name")
+        .reset_index(drop=True)
+    )
 
 
     #need to filter the temp down to only the records that are not present in the raw table
@@ -174,16 +151,16 @@ def update_raw_drivers_table_controller(num):
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
 
 
-        con.register("temp_compiled_session_constructors_df", temp_compiled_session_constructors_df)
+        con.register("temp_compiled_session_constructors_df", raw_constructor_source)
 
         new_raw_records = con.execute("""
             SELECT t.*
-            FROM temp_compiled_session_teams_df t
+            FROM temp_compiled_session_constructors_df t
             LEFT JOIN raw_constructor_table c
-                ON t.meeting_key = c.meeting_key
-               AND t.session_key = c.session_key
-               AND t.team_name = c.team_name
-            WHERE c.team_name IS NULL
+                ON t.constructor_name = c.constructor_name'
+                AND t.year = t.year
+                AND t.event_name = c.event_name
+            WHERE c.constructor_name IS NULL
         """).df()
 
     if not new_raw_records.empty:
@@ -211,9 +188,7 @@ def update_raw_drivers_table_controller(num):
 def pull_raw_constructors():
 
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-        result = con.execute("SELECT * FROM raw_constructors_table").df()
-
-    return result
+        con.execute("SELECT * FROM raw_constructors_table").df()
 
 #cleaning the raw file
 def clean_raw_constructors(df):
