@@ -188,24 +188,28 @@ def update_raw_constructor_table_controller(year=2026):
 def pull_raw_constructors():
 
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-        con.execute("SELECT * FROM raw_constructors_table").df()
+        df  = con.execute("SELECT * FROM raw_constructor_table").df()
+
+    return df
 
 #cleaning the raw file
 def clean_raw_constructors(df):
-    #FIXME: need to see the raw output first before building this out
     """
-    1. dedup
-    2. filter rows and cols
-    3. data type conversions
-    
+    Clean raw constructor data.
+    Output grain: one row per constructor per year
     """
 
-    #dedup
-    df = df.drop_duplicates(subset=["meeting_key", "session_key", "full_name"])
+    cols_to_keep = ["year", "constructor_name"]
 
-    #filter cols
-    cols_to_keep = ["meeting_key", "session_key", "driver_number", "full_name", "name_acronym", "team_name", "first_name", "last_name"]
     df = df[[col for col in cols_to_keep if col in df.columns]]
+
+    df = df.drop_duplicates(
+        subset=["constructor_name", "year"]
+    )
+
+    df = df.sort_values(
+        ["year", "constructor_name"]
+    ).reset_index(drop=True)
 
     return df
 
@@ -223,7 +227,7 @@ def build_stage_drivers_controller():
         result = con.execute("""
             CREATE OR REPLACE TABLE staged_session_constructors_table AS
             SELECT *
-            FROM drivers_staged_df_temp
+            FROM constructors_staged_df_temp
             """)
 
 
@@ -339,10 +343,10 @@ def constructors_pipeline(update:bool, amount_to_update=15):
 
     if not update:
         #building and writing the raw table
-        build_raw_constructors_table_controller()
+        #build_raw_constructors_table_controller()
 
         #stage
-        #build_stage_drivers_controller()
+        build_stage_drivers_controller()
 
         #warehouse
         #build_driver_dim_table()
