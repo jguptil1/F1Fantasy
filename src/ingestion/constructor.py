@@ -157,8 +157,8 @@ def update_raw_constructor_table_controller(year=2026):
             SELECT t.*
             FROM temp_compiled_session_constructors_df t
             LEFT JOIN raw_constructor_table c
-                ON t.constructor_name = c.constructor_name'
-                AND t.year = t.year
+                ON t.constructor_name = c.constructor_name
+                AND t.year = c.year
                 AND t.event_name = c.event_name
             WHERE c.constructor_name IS NULL
         """).df()
