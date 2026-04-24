@@ -9,7 +9,7 @@ import pandas as pd
 """
 This module solely deals with the ingestion, staging and warehouse of the data withing the newhistPointPrice excel file
 
-the data can be easily updated in that weekly or on a race by race basis and can flow into the pipeline as needed
+the data can be easily updated in that week or on a race by race basis and can flow into the rest of the pipeline as needed
 """
 
 
@@ -85,14 +85,34 @@ def load_sheets(years = [2023, 2024, 2025, 2026], sheet_types ={"Price", "Points
 
 def clean_and_transform_raw_dfs(dfs:dict):
 
-    driver_price_long  = convert_to_long(driver_price_dfs,  var_name="race", value_name="price",  type = "driver")
-    convert_to_long()
+    driver_price_sheets = ["2023DriverPrice", "2024DriverPrice", "2025DriverPrice", "2026DriverPrice"]
+    driver_points_sheets = ["2023DriverPoints", "2024DriverPoints", "2025DriverPoints", "2026DriverPoints"]
 
+    con_price_sheets = ["2023ConstructorPrice", "2024ConstructorPrice", "2025ConstructorPrice", "2026ConstructorPrice"]
+    con_points_sheets = ["2023ConstructorPoints", "2024ConstructorPoints", "2025ConstructorPoints", "2026ConstructorPoints"]
+
+
+    driver_price_dfs  = {k: dfs[k] for k in driver_price_sheets}
+    driver_points_dfs = {k: dfs[k] for k in driver_points_sheets}
+
+    con_price_dfs = {k: dfs[k] for k in con_price_sheets}
+    con_points_dfs = {k: dfs[k] for k in con_points_sheets}
+
+
+    driver_price_long  = convert_to_long(driver_price_dfs,  var_name="race", value_name="price",  type = "driver")
+    driver_points_long  = convert_to_long(driver_points_dfs,  var_name="race", value_name="points",  type = "driver")
+
+    con_price_long = convert_to_long(con_price_dfs, var_name="race", value_name="price", type= "constructor")
+    con_points_long = convert_to_long(con_points_dfs, var_name="race", value_name="points", type= "constructor")
+
+    
+    return driver_price_long, driver_points_long, con_price_long, con_points_long
 
 
 
 def raw_fantasy_table_controller():
     dfs, years, sheet_types, asset_types = load_sheets()
+    driver_price, driver_points, constructor_price, constructor_points = clean_and_transform_raw_dfs(dfs)
 
 
 
@@ -114,11 +134,6 @@ print(dfs["2023DriverPoints"].head())
 
 
 '''
-
-
-
-
-
 
 
 
