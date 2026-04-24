@@ -57,10 +57,9 @@ def run_pipeline(plan: dict):
 
     #Fantasy tables (driver/constructor points/prices)
     if plan.get("fantasy_tables") == "build":
-        fantasy_tables.raw_fantasy_table_controller() #defualt to always build as row count is low enough
-        print("success build fantasy tables")
+        fantasy_tables.fantasy_tables_pipeline() #default to always build as row count is low enough
     elif plan.get("fantasy_tables") == "update":
-        fantasy_tables.raw_fantasy_table_controller()
+        fantasy_tables.fantasy_tables_pipeline()
 
 
 

@@ -32,7 +32,7 @@ def get_table_names(con: duckdb.DuckDBPyConnection) -> list[str]:
 def get_table_row_count(con: duckdb.DuckDBPyConnection, table_name: str) -> int:
     """Return row count for a table."""
     query = f"SELECT COUNT(*) AS row_count FROM {table_name}"
-    return con.execute(query).fetchone()[0]
+    return con.execute(query).fetchone()[0] # type: ignore #
 
 
 def get_table_schema(con: duckdb.DuckDBPyConnection, table_name: str) -> pd.DataFrame:

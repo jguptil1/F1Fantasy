@@ -10,6 +10,9 @@ import pandas as pd
 This module solely deals with the ingestion, staging and warehouse of the data withing the newhistPointPrice excel file
 
 the data can be easily updated in that week or on a race by race basis and can flow into the rest of the pipeline as needed
+
+unlike the other pipeline modules these functions deal with mutliple tables due to the ingestion, not just a single one
+
 """
 
 
@@ -153,8 +156,6 @@ def raw_fantasy_tables_controller():
 
 
 
-
-
 def build_stage_fantasy_tables():
 
     raw_tables = [
@@ -195,49 +196,10 @@ def build_stage_fantasy_tables():
     #push the raw tables to the stage
 
 
-def update_stage_fantasy_tables():
 
-    return False
+#########################Fantasy Tables Pipeline##############################
 
-def stage_fantasy_table_controller():
-
-    return False
-
-
-
-
-
-def fantasy_tables_pipeline(update: bool):
-
-    #FIXME: verify this flow post lunch
-
-    if update:
-        raw_fantasy_tables_controller()
-        update_stage_fantasy_tables()
-
-    else:
-        raw_fantasy_tables_controller()
-        update_stage
-
-
-
-
-
-
-
-'''
-
-sheet_names =["2023DriverPrice", "2023ConstructorPrice", "2023DriverPoints","2023ConstructorPoints","2023DriverRoster", 
-              "2024DriverPrice", "2024ConstructorPrice", "2024DriverPoints", "2024ConstructorPoints", "2024DriverRoster",
-              "2025DriverPrice", "2025ConstructorPrice","2025DriverPoints", "2025ConstructorPoints",  "2025DriverRoster",
-               "2026DriverRoster", "2026DriverPrice", "2026DriverPoints", "2026ConstructorPrice", "2026ConstructorPoints"]
-
-
-dfs = {sheet: pd.read_excel(file_path, sheet_name=sheet) for sheet in sheet_names}
-
-
-# access one
-print(dfs["2023DriverPoints"].head())
-
-
-'''
+def fantasy_tables_pipeline():
+    
+    raw_fantasy_tables_controller()
+    build_stage_fantasy_tables()
