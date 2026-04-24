@@ -232,6 +232,8 @@ def clean_raw_drivers(df):
     cols_to_keep = ["meeting_key", "session_key", "driver_number", "full_name", "name_acronym", "team_name", "first_name", "last_name"]
     df = df[[col for col in cols_to_keep if col in df.columns]]
 
+    df["full_name"] = df["full_name"].str.lower()
+
     return df
 
 
@@ -341,6 +343,10 @@ def update_driver_dim_table():
             SELECT driver_id, driver_name, name_acronym
             FROM new_drivers_df_temp
             """)
+
+
+
+
 
 
 def read_drivers():

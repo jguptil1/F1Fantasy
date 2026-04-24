@@ -69,7 +69,7 @@ def main():
     plan = {
         #"meetings": "update" #this update includes updating the dim_race table
         #"sessions":"update",
-        #"drivers": "update",
+        "drivers": "build",
         "fantasy_tables": "build" #default build
         #"constructors": "update"
     }
