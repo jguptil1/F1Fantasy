@@ -24,7 +24,7 @@ def load_raw_file_path():
 
     cwd = load_working_directory()
 
-    return cwd / "data" / "raw" / "rawHistPointAndPrice.xlsx"
+    return cwd / "data" / "raw" / "newHistPointAndPrice.xlsx"
 
 
 #helper (pulled from old histDataClean.ipynb)
@@ -44,7 +44,7 @@ def standardize_headers(df: pd.DataFrame, first_col_name: str) -> pd.DataFrame:
     cleaned_cols = [first_col_name]
     for c in df.columns[1:]:
         try:
-            cleaned_cols.append(int(float(str(c).strip())))
+            cleaned_cols.append(int(float(str(c).strip()))) # type: ignore
         except ValueError:
             cleaned_cols.append(str(c).strip())
 
@@ -109,10 +109,117 @@ def clean_and_transform_raw_dfs(dfs:dict):
     return driver_price_long, driver_points_long, con_price_long, con_points_long
 
 
+def build_raw_fantasy_table(driver_price, driver_points, constructor_price, contructor_points):
 
-def raw_fantasy_table_controller():
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+
+        con.register("driver_price_df_temp", driver_price)
+
+        result = con.execute("""
+        CREATE OR REPLACE TABLE raw_driver_price_table AS
+        SELECT *
+        FROM driver_price_df_temp
+        """)
+
+        con.register("driver_points_df_temp", driver_points)
+
+        result = con.execute("""
+        CREATE OR REPLACE TABLE raw_driver_points_table AS
+        SELECT *
+        FROM driver_points_df_temp
+        """)
+
+        con.register("constructor_price_df_temp", constructor_price)
+
+        result = con.execute("""
+        CREATE OR REPLACE TABLE raw_constructor_price_table AS
+        SELECT *
+        FROM constructor_price_df_temp
+        """)
+
+        con.register("constructor_points_df_temp", contructor_points)
+
+        result = con.execute("""
+        CREATE OR REPLACE TABLE raw_constructor_points_table AS
+        SELECT *
+        FROM constructor_points_df_temp
+        """)
+
+
+def raw_fantasy_tables_controller():
     dfs, years, sheet_types, asset_types = load_sheets()
     driver_price, driver_points, constructor_price, constructor_points = clean_and_transform_raw_dfs(dfs)
+    build_raw_fantasy_table(driver_price, driver_points, constructor_price, constructor_points)
+
+
+
+
+
+def build_stage_fantasy_tables():
+
+    raw_tables = [
+        "raw_constructor_price_table",
+        "raw_constructor_points_table",
+        "raw_driver_price_table",
+        "raw_driver_points_table",
+    ]
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+
+        for table_name in raw_tables:
+
+            result = con.execute(f"""
+                SELECT *
+                FROM {table_name}
+            """).df()
+
+            result = result.dropna()
+
+            result["year"] = result["source_sheet"].str[:4].astype(int)
+            result = result.drop(columns=["source_sheet"])
+
+            stage_table_name = "stage" + table_name[3:]
+
+            con.register("built_df", result)
+
+            con.execute(f"""
+                CREATE OR REPLACE TABLE {stage_table_name} AS
+                SELECT *
+                FROM built_df
+            """)
+
+
+    #clean the raw table to include no rows where driver, race, points/price, source sheet is not na
+        #need to pull the year and have as a seperate column
+
+    #push the raw tables to the stage
+
+
+def update_stage_fantasy_tables():
+
+    return False
+
+def stage_fantasy_table_controller():
+
+    return False
+
+
+
+
+
+def fantasy_tables_pipeline(update: bool):
+
+    #FIXME: verify this flow post lunch
+
+    if update:
+        raw_fantasy_tables_controller()
+        update_stage_fantasy_tables()
+
+    else:
+        raw_fantasy_tables_controller()
+        update_stage
+
+
 
 
 
@@ -134,16 +241,3 @@ print(dfs["2023DriverPoints"].head())
 
 
 '''
-
-
-
-
-def main():
-
-    dfs = load_sheets()
-    print(dfs)
-
-
-if __name__ == "__main__":
-    main()
-

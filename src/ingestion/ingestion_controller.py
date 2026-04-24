@@ -2,6 +2,7 @@ import race_meetings
 import race_sessions
 import drivers
 import constructor
+import fantasy_tables
 
 
 #1. update or build race meetings table 
@@ -10,11 +11,14 @@ import constructor
 
 #3. update or build drivers table
 
+# build fantasy tables (driver/constructor points and prices)
+
 
 def api_tables_build():
     #race_meetings.meetings_pipeline(update=False)
     #race_sessions.sessions_pipeline(update=False)
     drivers.drivers_pipeline(update=False)
+    
 
 
 
@@ -22,10 +26,11 @@ def api_tables_update():
     race_meetings.meetings_pipeline(update=True)
     race_sessions.sessions_pipeline(update=True)
     drivers.drivers_pipeline(update=True)
+    
 
 
 
-def run_api_pipeline(plan: dict):
+def run_pipeline(plan: dict):
     #meetings
     if plan.get("meetings") == "build":
         race_meetings.meetings_pipeline(update=False)
@@ -44,14 +49,18 @@ def run_api_pipeline(plan: dict):
     elif plan.get("drivers") == "update":
         drivers.drivers_pipeline(update=True)
 
-
     #constructors
     if plan.get("constructors") == "build":
         constructor.constructors_pipeline(update=False)
     elif plan.get("constructors") == "update":
-        constructor.constructors_pipeline(update=True) 
+        constructor.constructors_pipeline(update=True)
 
-
+    #Fantasy tables (driver/constructor points/prices)
+    if plan.get("fantasy_tables") == "build":
+        fantasy_tables.raw_fantasy_table_controller() #defualt to always build as row count is low enough
+        print("success build fantasy tables")
+    elif plan.get("fantasy_tables") == "update":
+        fantasy_tables.raw_fantasy_table_controller()
 
 
 
@@ -62,10 +71,11 @@ def main():
         #"meetings": "update" #this update includes updating the dim_race table
         #"sessions":"update",
         #"drivers": "update",
+        "fantasy_tables": "build" #default build
         #"constructors": "update"
     }
 
-    run_api_pipeline(plan)
+    run_pipeline(plan)
 
 
 
