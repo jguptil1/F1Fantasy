@@ -3,6 +3,7 @@ import race_sessions
 import drivers
 import constructor
 import fantasy_tables
+import placements
 
 
 #1. update or build race meetings table 
@@ -61,6 +62,12 @@ def run_pipeline(plan: dict):
     elif plan.get("fantasy_tables") == "update":
         fantasy_tables.fantasy_tables_pipeline()
 
+    #placement tables
+    if plan.get("placements") == "build":
+        placements.driver_placements_pipeline(update=False)
+    elif plan.get("placements") == "update":
+        placements.driver_placements_pipeline(update=True, year = 2026)
+
 
 
 
@@ -71,7 +78,8 @@ def main():
         #"sessions":"update",
         #"drivers": "build",
         "fantasy_tables": "build", #default build
-        "constructors": "build"
+        "constructors": "update",
+        "placements": "update"
     }
 
     run_pipeline(plan)

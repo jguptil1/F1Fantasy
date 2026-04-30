@@ -21,11 +21,15 @@ def build_fact_driver_race():
             )
             SELECT
                 r.race_id,
+                r.year,
                 r.race_name,
                 d.driver_id,
                 c.constructor_id,
                 p.price,
-                pts.points AS fantasy_points
+                pts.points AS fantasy_points,
+                plc.finish_position as driver_finish_position,
+                plc.status
+                    
             FROM stage_driver_points_table pts
             LEFT JOIN stage_driver_price_table p
                 ON pts.year = p.year
@@ -42,6 +46,8 @@ def build_fact_driver_race():
             LEFT JOIN dim_constructor c
                 ON sd.team_name = c.constructor_name
                AND r.year = c.year
+            LEFT JOIN stage_driver_placement plc
+                ON r.race_id = plc.race_id
             WHERE r.race_id IS NOT NULL
             ORDER BY race_id
             
