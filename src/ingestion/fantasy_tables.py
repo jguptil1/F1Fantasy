@@ -105,7 +105,7 @@ def clean_and_transform_raw_dfs(dfs:dict):
     driver_price_long  = convert_to_long(driver_price_dfs,  var_name="race", value_name="price",  type = "driver")
     driver_price_long["driver"] = driver_price_long['driver'].str.lower()
     driver_points_long  = convert_to_long(driver_points_dfs,  var_name="race", value_name="points",  type = "driver")
-    driver_points_long["driver"] = driver_price_long['driver'].str.lower()
+    driver_points_long["driver"] = driver_points_long['driver'].str.lower()
     
     con_price_long = convert_to_long(con_price_dfs, var_name="race", value_name="price", type= "constructor")
     con_price_long["constructor"] = con_price_long['constructor'].str.lower()

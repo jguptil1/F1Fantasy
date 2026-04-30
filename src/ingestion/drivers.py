@@ -234,6 +234,9 @@ def clean_raw_drivers(df):
 
     df["full_name"] = df["full_name"].str.lower()
 
+    df["constructor_name"] = df['team_name']
+    df = df.drop(columns=["team_name"])
+
     return df
 
 
