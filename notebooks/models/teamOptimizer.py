@@ -4,7 +4,7 @@ import numpy as np
 
 from pathlib import Path
 
-from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, PULP_CBC_CMD, value
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, GLPK_CMD, value
 
 # pulp: underlying optimization engine
 # LpProblem: optimzation problem object
@@ -137,7 +137,7 @@ def optimize_team(
     )
 
     if use_drs:
-        obj += (drs_multiplier - 1.0) * lpSum(drivers.loc[i, points_col] * z_drs[i] for i in d_idx) 
+        obj += (drs_multiplier - 1.0) * lpSum(drivers.loc[i, points_col] * z_drs[i] for i in d_idx) # type: ignore
 
     
 
@@ -192,21 +192,21 @@ def optimize_team(
         for i in d_idx:
             driver_key = drivers.loc[i, "driver_key"]
             if driver_key in prior_drivers:
-                prob += t_d[i] == 0
+                prob += t_d[i] == 0 # type: ignore
             else:
-                prob += t_d[i] == x_d[i]
+                prob += t_d[i] == x_d[i] # type: ignore
 
         # Use normalized constructor team_key for matching
         for j in c_idx:
             constructor_key = cons.loc[j, "team_key"]
             if constructor_key in prior_constructors:
-                prob += t_c[j] == 0
+                prob += t_c[j] == 0 # type: ignore
             else:
-                prob += t_c[j] == x_c[j]
+                prob += t_c[j] == x_c[j] # type: ignore
 
         total_transfers = (
-            lpSum(t_d[i] for i in d_idx) +
-            lpSum(t_c[j] for j in c_idx)
+            lpSum(t_d[i] for i in d_idx) + # type: ignore
+            lpSum(t_c[j] for j in c_idx) # type: ignore
         )
 
         paid_transfers = LpVariable("paid_transfers", lowBound=0, cat="Integer")
@@ -218,7 +218,7 @@ def optimize_team(
     prob += obj #prob is just the optimization container
 
     ########SOLVE############
-    solver = PULP_CBC_CMD(msg=solver_msg)
+    solver = GLPK_CMD(msg=solver_msg)
     prob.solve(solver)
 
     # Extract results
@@ -241,7 +241,7 @@ def optimize_team(
     # DRS driver
     drs_driver = None
     if use_drs:
-        drs_picks = [i for i in d_idx if value(z_drs[i]) == 1]
+        drs_picks = [i for i in d_idx if value(z_drs[i]) == 1] # type: ignore
         if drs_picks:
             drs_driver = drivers.loc[drs_picks[0], "driver"]
 
@@ -255,8 +255,8 @@ def optimize_team(
         gross_points += (drs_multiplier - 1.0) * drs_points
     
     if last_week_lineup is not None:
-        total_transfers_val = int(round(value(total_transfers)))
-        paid_transfers_val = int(round(value(paid_transfers)))
+        total_transfers_val = int(round(value(total_transfers))) # type: ignore
+        paid_transfers_val = int(round(value(paid_transfers))) # type: ignore
         transfer_penalty = paid_transfers_val * 10
         net_points = gross_points - transfer_penalty
 
@@ -267,12 +267,11 @@ def optimize_team(
             "points_column_used": points_col,
             "total_price": round(total_price, 2),
             "gross_points": round(gross_points, 2),
-            "total_transfers": total_transfers_val,
+            "total_transfers": total_transfers_val, # type: ignore
             "free_transfers_avail": free_transfers_avail,
-            "paid_transfers": paid_transfers_val,
-            "transfer_penalty": transfer_penalty,
-            "net_points": round(net_points, 2),
-            "drs_driver": drs_driver,
+            "paid_transfers": paid_transfers_val, # type: ignore
+            "transfer_penalty": transfer_penalty, # type: ignore
+            "net_points": round(net_points, 2), # type: ignore
         }
 
     else:

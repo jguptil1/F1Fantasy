@@ -5,7 +5,7 @@
     "model__min_samples_leaf": 5,
     "model__n_estimators": 500
   },
-  "cv_mae": 10.320372538919658,
+  "cv_mae": 9.900563982773955,
   "features": [
     "year",
     "race_num",
