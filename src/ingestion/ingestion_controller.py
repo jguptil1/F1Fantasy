@@ -79,7 +79,8 @@ def main():
         #"drivers": "build",
         #"fantasy_tables": "build", #default build
         #"constructors": "update",
-        #"placements": "update",
+        "placements": "build",
+        #"elo": "build", #dependent on placements being up to date
         
     }
 

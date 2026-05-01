@@ -155,8 +155,25 @@ def stage_driver_placements():
         subset=["race_id", "meeting_key", "session_key", "year", "race_name", "FullName"]
     )
 
-    raw_table["driver"] = raw_table["FullName"].str.strip().str.lower()
-    raw_table["constructor"] = raw_table["TeamName"].str.strip().str.lower()
+    raw_table["driver"] = raw_table["FullName"].str.lower()
+    raw_table["constructor"] = raw_table["TeamName"].str.lower()
+
+    dnf_statuses = [
+        "Retired",
+        "Accident",
+        "Collision damage",
+        "Undertray"
+    ]
+
+    dns_statuses = ["Did not start", "Withdrew"]
+    dsq_statuses = ["Disqualified"]
+
+    raw_table["dnf"] = raw_table["Status"].isin(dnf_statuses).astype(int)
+    raw_table["dns"] = raw_table["Status"].isin(dns_statuses).astype(int)
+    raw_table["dsq"] = raw_table["Status"].isin(dsq_statuses).astype(int)
+    raw_table["nc"] = 0
+
+    raw_table = raw_table.dropna(subset=["finish_position", "grid_position"])
 
     staged_table = raw_table[
         [
@@ -169,6 +186,10 @@ def stage_driver_placements():
             "ClassifiedPosition",
             "Status",
             "GridPosition",
+            "dns",
+            "dnf",
+            "dsq",
+            "nc"
         ]
     ].rename(columns={
         "Position": "finish_position",
@@ -198,7 +219,3 @@ def driver_placements_pipeline(update=False, year=None):
     else:
         build_raw_driver_placements()
         stage_driver_placements()
-
-
-if __name__ == "__main__":
-    driver_placements_pipeline(update=False)
