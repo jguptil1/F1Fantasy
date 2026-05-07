@@ -39,7 +39,7 @@ def create_overrides_table():
     overrides_df = pd.DataFrame({
         "year": [2023, 2023, 2026],
         "race_id": [19, 19, 1],
-        "driver": ["HAM", "LEC", "STR"],
+        "driver": ["lewis hamilton", "charles leclerc", "lance stroll"],
         "dsq_override": [True, True, None],
         "position_override": [None, None, None],
         "dns_override": [None, None, None],
@@ -226,7 +226,7 @@ def elo_pipeline(update:bool):
         elo_table = run_elo(placement_table=placement_table, overrides_df=overrides_table)
 
         build_raw_elo_table(elo_table)
-        build_stage_elo_controller()
+        build_staged_elo_table()
 
     else:
         placement_table = read_placement_table()
@@ -235,7 +235,7 @@ def elo_pipeline(update:bool):
         elo_table = run_elo(placement_table=placement_table, overrides_df=overrides_table)
 
         build_raw_elo_table(elo_table)
-        build_stage_elo_controller()
+        build_staged_elo_table()
 
 
 

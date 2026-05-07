@@ -88,7 +88,7 @@ def main():
         #"fantasy_tables": "build", #default build
         #"constructors": "update",
         #"placements": "build",
-        "elo": "build", #doesnt matter, will always build
+        "elo": "build" #doesnt matter, will always build
         
     }
 
