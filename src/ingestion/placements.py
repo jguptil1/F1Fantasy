@@ -173,7 +173,10 @@ def stage_driver_placements():
     raw_table["dsq"] = raw_table["Status"].isin(dsq_statuses).astype(int)
     raw_table["nc"] = 0
 
-    raw_table = raw_table.dropna(subset=["finish_position", "grid_position"])
+    
+
+    raw_table["Position"] = raw_table["Position"].fillna(0)
+    raw_table["GridPosition"] = raw_table["GridPosition"].fillna(0)
 
     staged_table = raw_table[
         [
@@ -197,6 +200,8 @@ def stage_driver_placements():
         "Status": "status",
         "GridPosition": "grid_position",
     })
+
+
 
     with duckdb.connect(DATABASE_PATH) as con:
         con.register("new_placements_temp", staged_table)

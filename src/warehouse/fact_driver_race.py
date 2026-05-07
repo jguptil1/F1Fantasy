@@ -13,10 +13,10 @@ def build_fact_driver_race():
         CREATE OR REPLACE TABLE fact_driver_race AS
         WITH driver_constructor_map AS (
             SELECT DISTINCT
-                meeting_key,
-                full_name,
-                team_name
-            FROM staged_session_drivers_table
+                race_id,
+                driver,
+                constructor
+            FROM stage_driver_placement
         ),
         placement_map AS (
             SELECT
@@ -58,10 +58,10 @@ def build_fact_driver_race():
             ON pts.year = r.year
         AND pts.race = r.race_num
         LEFT JOIN driver_constructor_map sd
-            ON d.driver_name = sd.full_name
-        AND r.meeting_key = sd.meeting_key
+            ON r.race_id = sd.race_id
+        AND d.driver_name = sd.driver
         LEFT JOIN dim_constructor c
-            ON sd.team_name = c.constructor_name
+            ON lower(trim(sd.constructor)) = lower(trim(c.constructor_name))
         AND r.year = c.year
         LEFT JOIN placement_map plc
             ON r.race_id = plc.race_id

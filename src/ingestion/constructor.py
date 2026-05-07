@@ -98,13 +98,13 @@ def build_raw_constructors_table_controller(years=(2023, 2024, 2025, 2026)):
 
 
 def update_raw_constructor_table_controller(year=2026):
-    """
-    will only update for the given year
-    """
-
     all_team_rows = []
 
-    schedule = fastf1.get_event_schedule(year)
+    try:
+        schedule = fastf1.get_event_schedule(year)
+    except Exception as e:
+        print(f"Could not load FastF1 schedule for {year}: {e}")
+        return pd.DataFrame(columns=["constructor_name", "year", "event_name"])
 
     for _, event in schedule.iterrows():
         try:
@@ -123,20 +123,19 @@ def update_raw_constructor_table_controller(year=2026):
                 .rename(columns={"TeamName": "constructor_name"})
             )
 
-            team_df['year'] = year
-            team_df['event_name'] = event['EventName']
+            team_df["year"] = year
+            team_df["event_name"] = event["EventName"]
             all_team_rows.append(team_df)
-        
+
         except Exception as e:
             print(f'Skipping {year} - {event["EventName"]}: {e}')
             continue
-        
+
     if not all_team_rows:
         return pd.DataFrame(columns=["constructor_name", "year", "event_name"])
-    
 
     combined = pd.concat(all_team_rows, ignore_index=True)
-    
+
     raw_constructor_source = (
         combined[["constructor_name", "year", "event_name"]]
         .drop_duplicates()
@@ -144,13 +143,7 @@ def update_raw_constructor_table_controller(year=2026):
         .reset_index(drop=True)
     )
 
-
-    #need to filter the temp down to only the records that are not present in the raw table
-    #these will then get appended to the raw table
-
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-
-
         con.register("temp_compiled_session_constructors_df", raw_constructor_source)
 
         new_raw_records = con.execute("""
@@ -165,6 +158,8 @@ def update_raw_constructor_table_controller(year=2026):
 
     if not new_raw_records.empty:
         append_raw_constructors_table(new_raw_records)
+
+    return new_raw_records
 
 
 
@@ -339,7 +334,7 @@ def read_constructors():
 
 ############################Pipeline Controller###############
 
-def constructors_pipeline(update:bool, amount_to_update=15):
+def constructors_pipeline(update:bool, year=2026):
 
     '''
     update toggle helps with decreasing API Call volume
@@ -357,7 +352,7 @@ def constructors_pipeline(update:bool, amount_to_update=15):
 
     else:
         #appending and writing the raw table
-        update_raw_constructor_table_controller(amount_to_update)
+        update_raw_constructor_table_controller(year)
 
         #stage
         build_stage_constructors_controller()

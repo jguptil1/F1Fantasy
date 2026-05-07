@@ -57,7 +57,7 @@ def get_last_n_sessions(n):
     return result
 
 #API Caller
-def get_raw_drivers(session_key, max_retries = 10, sleep_seconds=2):
+def get_raw_drivers(session_key, max_retries = 20, sleep_seconds=2):
 
     '''
     this function creates a pandas dataframe of meeting info for a given year
