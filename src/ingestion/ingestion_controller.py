@@ -4,6 +4,7 @@ import drivers
 import constructor
 import fantasy_tables
 import placements
+import elo_ingestion
 
 
 #1. update or build race meetings table 
@@ -69,6 +70,13 @@ def run_pipeline(plan: dict):
         placements.driver_placements_pipeline(update=True, year = 2026)
 
 
+    #elo table
+    if plan.get("elo") == "build":
+        elo_ingestion.elo_pipeline(update=False)
+    elif plan.get("elo") == "update":
+        elo_ingestion.elo_pipeline(update=True)
+
+
 
 
 def main():
@@ -79,8 +87,8 @@ def main():
         #"drivers": "build",
         #"fantasy_tables": "build", #default build
         #"constructors": "update",
-        "placements": "build",
-        #"elo": "build", #dependent on placements being up to date
+        #"placements": "build",
+        #"elo": "build", #doesnt matter, will always build
         
     }
 

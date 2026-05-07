@@ -4,7 +4,12 @@ import duckdb
 import requests
 import time
 import pandas as pd
+
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+
 import os
 
 import elo
@@ -64,133 +69,130 @@ def run_elo(placement_table, overrides_df):
     )
     return elo_table
 
-def print_graphic(elo_table):
-    print("Building ELO plot...")
 
-    required_cols = {"year", "race_id", "driver", "elo_before"}
-    missing_cols = required_cols - set(elo_table.columns)
+#######################################Raw########################################
 
-    if missing_cols:
-        raise ValueError(f"Missing columns in elo_table: {missing_cols}")
 
-    elo_plot = elo_table.copy()
+def build_raw_elo_table(elo_table):
 
-    elo_plot = elo_plot.dropna(subset=["year", "race_id", "driver", "elo_before"])
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
 
-    if elo_plot.empty:
-        raise ValueError("elo_table has no rows after dropping missing values.")
+        con.register("raw_elo_table_temp", elo_table)
 
-    elo_plot["year"] = elo_plot["year"].astype(int)
-    elo_plot["race_id"] = elo_plot["race_id"].astype(int)
-    elo_plot["driver"] = elo_plot["driver"].astype(str).str.upper().str.strip()
-    elo_plot["elo_before"] = pd.to_numeric(elo_plot["elo_before"], errors="coerce")
-
-    elo_plot = elo_plot.dropna(subset=["elo_before"])
-
-    elo_plot = elo_plot.sort_values(["year", "race_id", "driver"]).copy()
-
-    race_order = (
-        elo_plot[["year", "race_id"]]
-        .drop_duplicates()
-        .sort_values(["year", "race_id"])
-        .reset_index(drop=True)
-    )
-
-    race_order["race_index"] = range(1, len(race_order) + 1)
-
-    elo_plot = elo_plot.merge(
-        race_order,
-        on=["year", "race_id"],
-        how="left"
-    )
-
-    fig, ax = plt.subplots(figsize=(18, 9))
-
-    for driver, sub in elo_plot.groupby("driver"):
-        sub = sub.sort_values("race_index")
-
-        if sub.empty:
-            continue
-
-        ax.plot(
-            sub["race_index"],
-            sub["elo_before"],
-            linewidth=1.8,
-            alpha=0.85
-        )
-
-        last_row = sub.iloc[-1]
-
-        ax.text(
-            last_row["race_index"] + 0.3,
-            last_row["elo_before"],
-            driver,
-            fontsize=9,
-            va="center"
-        )
-
-    season_starts = race_order.groupby("year", as_index=False)["race_index"].min()
-
-    for _, row in season_starts.iterrows():
-        ax.axvline(row["race_index"], linestyle="--", alpha=0.35)
-        ax.text(
-            row["race_index"],
-            ax.get_ylim()[1],
-            str(row["year"]),
-            fontsize=10,
-            va="top",
-            ha="left"
-        )
-
-    ax.set_xlabel("Race Index")
-    ax.set_ylabel("Pre-Race ELO")
-    ax.set_title("Driver ELO Trends")
-    ax.grid(True, alpha=0.3)
-
-    ax.set_xlim(
-        elo_plot["race_index"].min(),
-        elo_plot["race_index"].max() + 4
-    )
-
-    output_path = Path(r"C:\Users\jackg\code\F1Fantasy\data\outputs\elo_trends.png")
-
-    try:
-        print("About to create output folder")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        print("About to tight_layout")
-        fig.tight_layout()
-
-        print("About to save")
-        fig.savefig(output_path, dpi=200, bbox_inches="tight")
-
-        print("About to close")
-        plt.close(fig)
-
-        print(f"Saved plot to: {output_path}")
-        print(f"Exists: {output_path.exists()}")
-
-    except Exception as e:
-        print("SAVE BLOCK FAILED:", repr(e))
-        raise
+        con.execute("""
+        CREATE OR REPLACE TABLE raw_elo_table AS
+        SELECT *
+        FROM raw_elo_table_temp
+        """)
 
 
 
-def elo_pipeline():
-    placement_table = read_placement_table()
-    overrides_table = create_overrides_table()
-
-    elo_table = run_elo(placement_table=placement_table, overrides_df=overrides_table)
-
-    return elo_table
 
 
+###################################Stage###################################
 
-if __name__ == "__main__":
-   elo_table = elo_pipeline()
-   print(elo_table)
-   print(os.getcwd())
-   print_graphic(elo_table)
+#rename columns
+#standardize data types
+#filter unwanted rows/columns
+    #testing and canceled events
+#deduplicate
+#reshape wide to long
+#standardize names/codes
+#add simple derived fields needed for joins
+#align grains
+#prepare keys for warehouse layer
+
+
+#helper functions
+
+def pull_raw_elo_table():
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+
+
+        result = con.execute("""
+        SELECT *
+        FROM raw_elo_table
+        """).df()
+
+    return result
+
+#cleaning the raw file
+def clean_raw_elo(df):
+
+    """
+    1. dedup
+    2. filter rows and cols
+    3. data type conversions
+    
+    """
+
+    #dedup
+    df = df.drop_duplicates(subset=["race_id", "year", "race_name", "driver"])
+
+    return df
+
+
+#writing the staged table to the database
+def build_stage_elo_controller():
+
+    raw_df = pull_raw_elo_table()
+
+    stage_df = clean_raw_elo(raw_df)
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+        con.register("drivers_elo_df_temp", stage_df)
+
+        result = con.execute("""
+            CREATE OR REPLACE TABLE staged_elo_table AS
+            SELECT *
+            FROM drivers_elo_df_temp
+            """)
+
+
+    return result
+
+
+def pull_staged_elo_table():
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+
+
+        result = con.execute("""
+        SELECT *
+        FROM staged_elo_table
+        """).df()
+
+    return result
+
+
+
+############################Pipeline Controller###############
+
+def elo_pipeline(update:bool):
+
+    '''
+    for this one, given that it doesnt use API's directly we can always build
+    '''
+
+    if not update:
+        placement_table = read_placement_table()
+        overrides_table = create_overrides_table()
+
+        elo_table = run_elo(placement_table=placement_table, overrides_df=overrides_table)
+
+        build_raw_elo_table(elo_table)
+        build_stage_elo_controller()
+
+    else:
+        placement_table = read_placement_table()
+        overrides_table = create_overrides_table()
+
+        elo_table = run_elo(placement_table=placement_table, overrides_df=overrides_table)
+
+        build_raw_elo_table(elo_table)
+        build_stage_elo_controller()
+
 
 
 
