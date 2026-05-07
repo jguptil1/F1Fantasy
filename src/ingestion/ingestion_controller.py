@@ -82,14 +82,13 @@ def run_pipeline(plan: dict):
 def main():
 
     plan = {
-        #"meetings": "update" #this update includes updating the dim_race table
-        #"sessions":"update",
-        #"drivers": "build",
-        #"fantasy_tables": "build", #default build
-        #"constructors": "update",
-        #"placements": "build",
+        "meetings": "update", #this update includes updating the dim_race table
+        "sessions":"update",
+        "drivers": "update",
+        "fantasy_tables": "build", #default build
+        "constructors": "update",
+        "placements": "update",
         "elo": "build" #doesnt matter, will always build
-        
     }
 
     run_pipeline(plan)
