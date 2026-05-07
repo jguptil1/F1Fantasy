@@ -10,46 +10,60 @@ def build_fact_driver_race():
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
         con.execute("""
                             
-            CREATE OR REPLACE TABLE fact_driver_race AS
-                                              
-            WITH driver_constructor_map AS (
-                SELECT DISTINCT
-                    meeting_key,
-                    full_name,
-                    team_name
-                FROM staged_session_drivers_table
-            )
+        CREATE OR REPLACE TABLE fact_driver_race AS
+        WITH driver_constructor_map AS (
+            SELECT DISTINCT
+                meeting_key,
+                full_name,
+                team_name
+            FROM staged_session_drivers_table
+        ),
+        placement_map AS (
             SELECT
-                r.race_id,
-                r.year,
-                r.race_name,
-                d.driver_id,
-                c.constructor_id,
-                p.price,
-                pts.points AS fantasy_points,
-                plc.finish_position as driver_finish_position,
-                plc.status
-                    
-            FROM stage_driver_points_table pts
-            LEFT JOIN stage_driver_price_table p
-                ON pts.year = p.year
-               AND pts.race = p.race
-               AND pts.driver = p.driver
-            LEFT JOIN dim_driver d
-                ON pts.driver = d.driver_name
-            LEFT JOIN dim_race r
-                ON pts.year = r.year
-               AND pts.race = r.race_num
-            LEFT JOIN driver_constructor_map sd
-                ON d.driver_name = sd.full_name
-               AND r.meeting_key = sd.meeting_key
-            LEFT JOIN dim_constructor c
-                ON sd.team_name = c.constructor_name
-               AND r.year = c.year
-            LEFT JOIN stage_driver_placement plc
-                ON r.race_id = plc.race_id
-            WHERE r.race_id IS NOT NULL
-            ORDER BY race_id
+                race_id,
+                driver,
+                MIN(finish_position) AS finish_position,
+                ANY_VALUE(status) AS status
+            FROM stage_driver_placement
+            GROUP BY race_id, driver
+        )
+        SELECT
+            r.race_id,
+            r.year,
+            r.race_name,
+            d.driver_id,
+            c.constructor_id,
+            p.price,
+            pts.points AS fantasy_points,
+            plc.finish_position AS driver_finish_position,
+            plc.status,
+            elo.elo_before,
+            elo.elo_delta,
+            elo.elo_after
+        FROM stage_driver_points_table pts
+        LEFT JOIN stage_driver_price_table p
+            ON pts.year = p.year
+        AND pts.race = p.race
+        AND pts.driver = p.driver
+        LEFT JOIN dim_driver d
+            ON pts.driver = d.driver_name
+        LEFT JOIN dim_race r
+            ON pts.year = r.year
+        AND pts.race = r.race_num
+        LEFT JOIN driver_constructor_map sd
+            ON d.driver_name = sd.full_name
+        AND r.meeting_key = sd.meeting_key
+        LEFT JOIN dim_constructor c
+            ON sd.team_name = c.constructor_name
+        AND r.year = c.year
+        LEFT JOIN placement_map plc
+            ON r.race_id = plc.race_id
+        AND d.driver_name = plc.driver
+        LEFT JOIN staged_elo_table elo
+            ON r.race_id = elo.race_id
+        AND d.driver_name = elo.driver
+        WHERE r.race_id IS NOT NULL
+        ORDER BY race_id
             
         """)
 

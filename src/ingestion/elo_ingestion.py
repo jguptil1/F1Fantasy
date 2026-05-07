@@ -69,7 +69,6 @@ def run_elo(placement_table, overrides_df):
     )
     return elo_table
 
-
 #######################################Raw########################################
 
 
@@ -130,42 +129,87 @@ def clean_raw_elo(df):
     #dedup
     df = df.drop_duplicates(subset=["race_id", "year", "race_name", "driver"])
 
+
+
     return df
 
 
-#writing the staged table to the database
-def build_stage_elo_controller():
-
-    raw_df = pull_raw_elo_table()
-
-    stage_df = clean_raw_elo(raw_df)
-
-    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-        con.register("drivers_elo_df_temp", stage_df)
-
-        result = con.execute("""
-            CREATE OR REPLACE TABLE staged_elo_table AS
-            SELECT *
-            FROM drivers_elo_df_temp
-            """)
+DATABASE_PATH = "data/database/f1_fantasy.duckdb"
 
 
-    return result
-
-
-def pull_staged_elo_table():
-
-    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
-
-
-        result = con.execute("""
-        SELECT *
-        FROM staged_elo_table
+def get_fact_driver_race_for_elo_expand():
+    with duckdb.connect(DATABASE_PATH, read_only=True) as con:
+        return con.execute("""
+            SELECT
+                f.race_id,
+                f.year,
+                f.race_name,
+                f.driver_id,
+                d.driver_name AS driver
+            FROM fact_driver_race f
+            JOIN dim_driver d
+                ON f.driver_id = d.driver_id
+            WHERE f.race_id IS NOT NULL
+            ORDER BY f.year, f.race_id
         """).df()
 
-    return result
+
+def expand_elo_to_fact_driver_race(elo_df, fact_df):
+    fact_base = fact_df[
+        ["race_id", "year", "race_name", "driver_id", "driver"]
+    ].copy()
+
+    elo_small = elo_df[
+        ["race_id", "driver", "elo_before", "elo_delta", "elo_after"]
+    ].copy()
+
+    merged = fact_base.merge(
+        elo_small,
+        on=["race_id", "driver"],
+        how="left"
+    )
+
+    merged = merged.sort_values(
+        ["driver_id", "year", "race_id"]
+    ).reset_index(drop=True)
+
+    merged["carried_elo"] = (
+        merged.groupby("driver_id")["elo_after"].ffill()
+    )
+
+    merged["elo_before"] = (
+        merged["elo_before"]
+        .fillna(merged["carried_elo"])
+        .fillna(1500)
+    )
+
+    merged["elo_delta"] = merged["elo_delta"].fillna(0)
+    merged["elo_after"] = merged["elo_after"].fillna(merged["elo_before"])
+
+    merged = merged.drop(columns=["carried_elo"])
+
+    return merged
 
 
+def build_staged_elo_table():
+    raw_elo = pull_raw_elo_table()
+    raw_elo = clean_raw_elo(raw_elo)
+
+    fact_df = get_fact_driver_race_for_elo_expand()
+
+    staged_elo = expand_elo_to_fact_driver_race(
+        elo_df=raw_elo,
+        fact_df=fact_df
+    )
+
+    with duckdb.connect(DATABASE_PATH) as con:
+        con.register("staged_elo_temp", staged_elo)
+
+        con.execute("""
+            CREATE OR REPLACE TABLE staged_elo_table AS
+            SELECT *
+            FROM staged_elo_temp
+        """)
 
 ############################Pipeline Controller###############
 

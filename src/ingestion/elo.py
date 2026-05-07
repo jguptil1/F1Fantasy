@@ -1,4 +1,5 @@
 import pandas as pd
+import duckdb
 from itertools import combinations
 
 
@@ -336,6 +337,24 @@ def run_driver_elo_pipeline(
         inactivity_shrink=inactivity_shrink,
         return_matchups=return_matchups,
     )
+
+def get_fact_driver_race_for_elo_expand():
+    with duckdb.connect("data/database/f1_fantasy.duckdb", read_only=True) as con:
+        return con.execute("""
+            SELECT
+                f.race_id,
+                f.year,
+                f.race_name,
+                f.driver_id,
+                d.driver_name AS driver
+            FROM fact_driver_race f
+            JOIN dim_driver d
+                ON f.driver_id = d.driver_id
+            WHERE f.race_id IS NOT NULL
+            ORDER BY f.year, f.race_id
+        """).df()
+
+
 
 
 def qa_driver_elo(
