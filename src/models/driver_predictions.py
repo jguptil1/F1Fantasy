@@ -12,8 +12,8 @@ import pandas as pd
 #these tables have been created 5/8/2026 and the methods should not be used moving forward and will not be in scope of the predictions controller
 
 def load_data():
-    old_driver_predictions = pd.read_csv("src\predictions\old_driver_predictions.csv")
-    old_runs = pd.read_csv("src\predictions\old_prediction_runs.csv")
+    old_driver_predictions = pd.read_csv("src\predictions\old_driver_predictions.csv") # type: ignore
+    old_runs = pd.read_csv("src\predictions\old_prediction_runs.csv") # type: ignore
 
     return old_driver_predictions, old_runs
 

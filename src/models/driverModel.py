@@ -493,7 +493,7 @@ def naive_baseline_time_aware(hist_df, n_test_races=4):
     return mae, rmse, baseline_pred
 
 def get_old_baselines(race_num):
-    hist, curr, elo = load_data()
+    hist, curr, elo = load_data() #type: ignore
     hist_week = hist[
     (hist["year"] < 2026) |
     ((hist["year"] == 2026) & (hist["race_num"] < race_num))
@@ -517,7 +517,7 @@ def create_correlation_matrix_graph(corr_matrix):
     plt.figure(figsize=(8, 6))
 
     # Create the Seaborn heatmap
-    sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap='coolwarm', square=True)
+    sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap='coolwarm', square=True) #type: ignore
 
     # Add a title
     plt.title('Correlation Matrix Heatmap')
@@ -530,7 +530,7 @@ def coef_analysis(models, X_train, y_train):
     coef_tables = {}
 
     for name, model in models.items():
-        pipe = Pipeline([("preprocess", preprocess), ("model", model)])
+        pipe = Pipeline([("preprocess", preprocess), ("model", model)]) #type: ignore
         pipe.fit(X_train, y_train)
 
         mdl = pipe.named_steps["model"]

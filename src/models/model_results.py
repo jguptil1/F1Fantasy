@@ -11,11 +11,11 @@ import pandas as pd
 #these tables have been created 5/8/2026 and the methods should not be used moving forward and will not be in scope of the predictions controller
 
 def load_old_model_performance_table():
-    old_model_results = pd.read_csv("src\predictions\old_model_performance.csv")
+    old_model_results = pd.read_csv("src\predictions\old_model_performance.csv") # type: ignore
     return old_model_results
 
 def load_old_model_mean_results_table():
-    old_model_results = pd.read_csv("src\predictions\old_niave_baselines.csv")
+    old_model_results = pd.read_csv("src\predictions\old_niave_baselines.csv") # type: ignore
     return old_model_results
 
 
