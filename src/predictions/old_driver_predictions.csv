@@ -1,0 +1,89 @@
+prediction_run_id,prediction_timestamp,model_name,model_version,feature_set_version,target_variable,train_data_cutoff,is_production_run,year,race_id,race_num,race_name,is_sprint_weekend,driver_id,accronym,driver_name,constructor_id,constructor_acronym,price,prediction
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,43,VER,max verstappen,39,RBR,27.7,38.16385996
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,22,RUS,george russell,37,MER,27.4,24.50820943
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,36,NOR,lando norris,36,MCL,27.2,16.81513221
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,52,PIA,oscar piastri,36,MCL,25.5,16.83367644
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,34,ANT,kimi antonelli,37,MER,23.2,20.57974207
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,10,LEC,charles leclerc,34,FER,22.8,21.13558533
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,38,HAM,lewis hamilton,34,FER,22.5,18.80522134
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,26,HAD,isack hadjar,39,RBR,15.1,13.01111767
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,55,GAS,pierre gasly,30,ALP,12,4.257290167
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,9,SAI,carlos sainz,40,WIL,11.8,3.757900795
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,2,ALB,alexander albon,40,WIL,11.6,1.537897048
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,17,ALO,fernando alonso,31,AMR,10,3.113015615
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,35,STR,lance stroll,31,AMR,8,3.485442909
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,49,BEA,oliver bearman,35,HAS,7.4,3.777560809
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,15,OCO,esteban ocon,35,HAS,7.3,2.782667712
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,45,HUL,nico hulkenberg,32,AUD,6.8,9.227554531
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,39,LAW,liam lawson,38,RB,6.5,6.684647045
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,20,BOR,gabriel bortoleto,32,AUD,6.4,5.9409381
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,18,COL,franco colapinto,30,ALP,6.2,8.773123687
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,6,LIN,arvid lindblad,38,RB,6.2,2.862939576
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,61,PER,sergio perez,33,CAD,6,3.668579287
+1,3/6/2026 23:30,MVP,1,1,points,,TRUE,2026,71,1,Australia,False ,66,BOT,valtteri bottas,33,CAD,5.9,4.211683234
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,43,VER,max verstappen,39,RBR,28,41.01571313
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,22,RUS,george russell,37,MER,27.7,34.89451432
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,36,NOR,lando norris,36,MCL,27.1,24.95743885
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,52,PIA,oscar piastri,36,MCL,25.2,20.35018061
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,34,ANT,kimi antonelli,37,MER,23.5,11.76325517
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,10,LEC,charles leclerc,34,FER,23.1,22.07154441
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,38,HAM,lewis hamilton,34,FER,22.6,21.34170783
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,26,HAD,isack hadjar,39,RBR,14.5,4.836947152
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,55,GAS,pierre gasly,30,ALP,12.2,4.464973526
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,9,SAI,carlos sainz,40,WIL,11.6,2.377343113
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,2,ALB,alexander albon,40,WIL,11.4,4.347097043
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,17,ALO,fernando alonso,31,AMR,9.4,4.181427207
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,49,BEA,oliver bearman,35,HAS,8,9.973022885
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,15,OCO,esteban ocon,35,HAS,7.9,6.645599906
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,35,STR,lance stroll,31,AMR,7.4,9.919571358
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,20,BOR,gabriel bortoleto,32,AUD,7,4.414758866
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,6,LIN,arvid lindblad,38,RB,6.8,5.476080067
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,18,COL,franco colapinto,30,ALP,6.4,6.220915048
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,39,LAW,liam lawson,38,RB,6.3,1.715410291
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,45,HUL,nico hulkenberg,32,AUD,6.2,3.487285624
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,61,PER,sergio perez,33,CAD,5.8,5.127958616
+2,3/12/2026 19:00,MVP,2,2,points,,TRUE,2026,72,2,China,TRUE,66,BOT,valtteri bottas,33,CAD,5.3,3.077571847
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,43,VER,max verstappen,39,RBR,28.1,34.29536886
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,22,RUS,george russell,37,MER,28,31.57436501
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,36,NOR,lando norris,36,MCL,26.8,20.61603841
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,52,PIA,oscar piastri,36,MCL,24.9,18.81201193
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,34,ANT,kimi antonelli,37,MER,23.8,26.52033742
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,10,LEC,charles leclerc,34,FER,23.4,24.44708773
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,38,HAM,lewis hamilton,34,FER,22.9,22.77277849
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,26,HAD,isack hadjar,39,RBR,13.9,9.223029686
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,55,GAS,pierre gasly,30,ALP,12.8,5.949337767
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,9,SAI,carlos sainz,40,WIL,12.2,7.763331704
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,2,ALB,alexander albon,40,WIL,10.8,4.301135837
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,17,ALO,fernando alonso,31,AMR,8.8,3.394180838
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,49,BEA,oliver bearman,35,HAS,8.6,10.28968418
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,15,OCO,esteban ocon,35,HAS,8.5,6.525777272
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,6,LIN,arvid lindblad,38,RB,7.4,6.525777272
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,18,COL,franco colapinto,30,ALP,7,3.942200239
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,39,LAW,liam lawson,38,RB,6.9,5.326128106
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,35,STR,lance stroll,31,AMR,6.8,4.342492188
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,20,BOR,gabriel bortoleto,32,AUD,6.4,4.42673692
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,61,PER,sergio perez,33,CAD,6.4,3.233927484
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,45,HUL,nico hulkenberg,32,AUD,5.6,4.42673692
+3,3/27/2026 19:00,MVP,2,2,points,,TRUE,2026,73,3,Japan,False ,66,BOT,valtteri bottas,33,CAD,4.7,4.577870629
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,22,RUS,george russell,37,MER,28.3,30.96890141
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,43,VER,max verstappen,39,RBR,28.2,32.19904374
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,36,NOR,lando norris,36,MCL,26.5,21.83082592
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,52,PIA,oscar piastri,36,MCL,24.6,21.26174957
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,34,ANT,kimi antonelli,37,MER,24.1,28.10349343
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,10,LEC,charles leclerc,34,FER,23.7,25.56843868
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,38,HAM,lewis hamilton,34,FER,23.2,24.64422488
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,26,HAD,isack hadjar,39,RBR,13.3,9.438365992
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,55,GAS,pierre gasly,30,ALP,13,7.377469074
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,9,SAI,carlos sainz,40,WIL,12.4,8.309003029
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,2,ALB,alexander albon,40,WIL,10.2,4.328561056
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,49,BEA,oliver bearman,35,HAS,9.2,8.513110483
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,15,OCO,esteban ocon,35,HAS,9.1,6.662825519
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,17,ALO,fernando alonso,31,AMR,8.2,4.476511331
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,18,COL,franco colapinto,30,ALP,7.6,4.385983163
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,6,LIN,arvid lindblad,38,RB,7.6,4.885413143
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,39,LAW,liam lawson,38,RB,7.5,5.180959953
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,61,PER,sergio perez,33,CAD,7,3.70931443
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,35,STR,lance stroll,31,AMR,6.2,5.194721673
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,20,BOR,gabriel bortoleto,32,AUD,5.8,4.520547868
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,45,HUL,nico hulkenberg,32,AUD,5,4.648594475
+4,5/1/2026 16:00,MVP,3,2,points,,TRUE,2026,76,6,Miami,TRUE,66,BOT,valtteri bottas,33,CAD,4.1,3.708377228

@@ -62,7 +62,7 @@ def build_current_race_driver_features(year, race_num):
                 le.elo_before,
 
                 -- carry/lagged features
-                h.is_sprint_weekend,
+                CAST(h.is_sprint_weekend AS INTEGER) AS is_sprint_weekend,
                 h.price_increase,
                 h.price_decrease,
                 h.price_change_prev_race,

@@ -1,0 +1,5 @@
+prediction_run_id,created_at,model_name,model_version,feature_set_version,target,train_cutoff_race_id, asset_type
+1,3/6/2026 23:30,MVP,1,1,points,70,driver
+2,3/12/2026 19:00,MVP,2,2,points,71,driver
+3,3/27/2026 19:00,MVP,2,2,points,72,driver
+4,5/1/2026 16:00,MVP,3,2,points,73,driver

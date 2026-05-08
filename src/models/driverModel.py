@@ -1,10 +1,21 @@
 import pandas as pd
 import numpy as np
 
-# Others
+from urllib.request import urlopen
 from pathlib import Path
 import joblib
 import json
+
+
+# Database connection
+import duckdb
+DATABASE_PATH = "data/database/f1_fantasy.duckdb"
+
+#time modules
+import time
+from datetime import datetime
+
+
 
 # Visualization
 import matplotlib.pyplot as plt
@@ -39,173 +50,42 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error #metrics for
 #hyperparameter tuning
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 
-########################HELPER FUNCTIONS####################################
-
-def get_working_directory():
-    return Path(__file__).resolve().parents[2]
 
 
 ### Helper function #FIXME: look through this code and make sure it covers all bases. Look into april and summer break options
 
-def get_current_week_race_num():
-
-    today_dt = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    
-    #calendar load
-    working_directory = get_working_directory()
-    file_path = working_directory / "data" / "clean" / "race_session_meeting_info.csv"
-    calendar = pd.read_csv(file_path).drop(columns=["Unnamed: 0"])
-
-    #getting the current race number
-    today_dt = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-    calendar["start_date"] = pd.to_datetime(calendar["start_date"], utc=True)
-    next_race_int = calendar.loc[calendar["start_date"] >= today_dt, "race"].iloc[0]
-    #getting current year
-
-    today_dt = pd.to_datetime(today_dt)
-    current_year = today_dt.year
-
-
-    return next_race_int, current_year
-
-
 
 #########################CORE FUNCTIONS###################################
- 
+
+#### Loading data
+def load_pre_race_driver_features():
+    with duckdb.connect(DATABASE_PATH) as con:
+        result = con.execute("SELECT * FROM pre_race_driver_features").df()
+    return result
+
+def load_current_week_driver_features():
+    with duckdb.connect(DATABASE_PATH) as con:
+        result = con.execute("SELECT * FROM current_race_driver_features").df()
+    return result
+
 def load_data():
-    working_directory = get_working_directory()
+    return load_pre_race_driver_features(), load_current_week_driver_features()
 
-    hist_path = working_directory / "data" / "semi-clean" / "hist_driver_points_df_v1.csv"
-    curr_path = working_directory / "data" / "semi-clean" / "current_week_driver_points_df_v1.csv"
-    elo_path = working_directory / "data" / "semi-clean" / "elo_table.csv"
-    #placement_df_path = working_directory / "data" / "clean" / "placement_table.csv"
-    #race_session_info_path = working_directory / "data" / "clean" / "race_session_meeting_info.csv"
+def get_working_directory():
+    return Path(__file__).resolve().parents[2]
 
-    hist = pd.read_csv(hist_path).drop(columns=["Unnamed: 0"])
-    curr = pd.read_csv(curr_path).drop(columns=["Unnamed: 0"])
-    elo = pd.read_csv(elo_path).drop(columns=["Unnamed: 0"])
-    
-    hist = hist[~hist["constructor"].isna()].copy()
-    hist = hist.dropna(subset=["points"]).copy()
-    hist["time_id"] = hist["year"] * 100 + hist["race_num"]
-    hist = hist.sort_values(["time_id", "driver"]).reset_index(drop=True)
-
-    curr = curr.copy()
-    elo = elo[["race_num", "year", "driver", "elo_before", "elo_after"]].copy()
-
-    hist = hist.drop(columns=["start_date"], errors="ignore")
-    curr = curr.drop(columns=["start_date"], errors="ignore")
-
-
-
-    return hist, curr, elo
-
-def create_married_dataframe(hist, curr, elo):
-
-    current_week_race_num, current_year = get_current_week_race_num()
-
-    married = pd.concat([hist, curr], ignore_index=True)
-
-
-    #FEATURE ENGINEERING
-    married["momentum"] = (
-        married["points_last_three_avg"] - married["points_last_five_avg"]
-    ).fillna(0)  #null values (first row, will be filled with zero)
-
-    married = married.drop(columns=["month", "price_rank", "points_last_three_avg", "ppm_last_3"])
-
-    #merging elo to the married set
-    married = married.merge(elo, how="left", on=["year", "race_num", "driver"])
-    married = married.rename(
-        columns={"elo_before": "driver_elo"}
-    )
-
-
-    latest_elo = (
-        elo.sort_values(["driver", "year", "race_num"])
-        .groupby("driver", as_index=False)
-        .tail(1)[["driver", "elo_after"]]
-        .rename(columns={"elo_after": "latest_elo_after"})
-    )
-
-    married = married.merge(
-        latest_elo,
-        on="driver",
-        how="left"
-    )
-
-    mask_current = (
-        (married["year"] == current_year) &
-        (married["race_num"] == current_week_race_num) &
-        (married["driver_elo"].isna())
-    )
-
-    married.loc[mask_current, "driver_elo"] = married.loc[
-        mask_current, "latest_elo_after"
-    ]
-
-    # fill DNS / historical gaps
-    married["driver_elo"] = married["driver_elo"].fillna(
-        married["latest_elo_after"]
-    )
-
-    # remove helper column
-    married = married.drop(columns=["latest_elo_after", "elo_after", "meeting_key_x", "meeting_key_y"])
-
-    #MORE FEATURE ENGINEERING
-    married['price_increase'] = (married['price_change_prev_race'] > 0).astype(int)
-    married['price_decrease'] = (married['price_change_prev_race'] < 0).astype(int)
-
-
-    # proxy for constructor performance (car performance)
-    married["teammate_points_last5"] = (
-        married.groupby(["year", "race_num", "constructor"])["points_last_five_avg"]
-        .transform(lambda x: x.sum() - x)
-    )
-
-    #driver strength independent of car strength (driver performance)
-    #positive means that the driver is outperforming teammate
-    #drivers outperforming their teammate tend to score more points
-
-    married["teammate_delta_last5"] = (
-        married["points_last_five_avg"] - married["teammate_points_last5"]
-    )
-
-    return married
-
-def divorce_dfs(married_df):
-
-    current_week_race_num, current_year = get_current_week_race_num()
-
-    curr = married_df[(married_df["race_num"] == current_week_race_num) & (married_df["year"] == current_year)] #requires use of the get_current_week_race_num
-
-    key_cols = ["year", "race_num", "driver"]
-
-    hist = married_df.merge(
-        curr[key_cols].drop_duplicates(),
-        on=key_cols,
-        how="left",
-        indicator=True
-    )
-    hist = hist[hist["_merge"] == "left_only"].drop(columns="_merge")
-
-    hist = hist.sort_values(["year", "race_num", "driver"]).reset_index(drop=True)
-    hist = hist.drop(columns=["start_epoch"], errors="ignore")
-
-    return curr, hist
-
+#### Modeling Functions
 def prepare_model_data(hist_df, n_test_races=4):
-    target = "points"
+    target = "fantasy_points"
 
     hist_df = hist_df.copy()
-    hist_df = hist_df.sort_values(["time_id", "driver"]).reset_index(drop=True)
+    hist_df = hist_df.sort_values(["year", "race_id", "driver_id"]).reset_index(drop=True)
 
-    unique_races = hist_df["time_id"].drop_duplicates().sort_values().tolist()
+    unique_races = hist_df["race_id"].drop_duplicates().sort_values().tolist()
     test_races = unique_races[-n_test_races:]
 
-    train_df = hist_df[~hist_df["time_id"].isin(test_races)].copy()
-    test_df = hist_df[hist_df["time_id"].isin(test_races)].copy()
+    train_df = hist_df[~hist_df["race_id"].isin(test_races)].copy()
+    test_df = hist_df[hist_df["race_id"].isin(test_races)].copy()
 
     X = hist_df.drop(columns=[target])
     y = hist_df[target]
@@ -315,9 +195,8 @@ def train_and_evaluate(preprocess, models, X, y, X_train, X_test, y_train, y_tes
     return results_df, best_name, best_pipe, feature_cols, coef_tables
 
 def predict_current_week(best_pipe, curr_df, feature_cols):
-    current_week_df = curr_df.drop(columns=["points"])
+    current_week_df = curr_df.drop(columns=["fantasy_points"])
     current_week_df.columns
-
 
     X_curr = pd.DataFrame(
         current_week_df.reindex(columns=feature_cols),
@@ -331,7 +210,7 @@ def predict_current_week(best_pipe, curr_df, feature_cols):
     current_week_preds["predicted_points"] = pred_points
 
     output_predictions = current_week_preds[
-        ["year", "race_num", "driver", "price", "constructor", "predicted_points"]
+        ["year", "race_id", "driver_id", "price", "constructor_id", "predicted_points"]
     ].reset_index(drop=True)
 
     return output_predictions
@@ -447,9 +326,7 @@ def save_model_artifacts(best_pipe, best_name, feature_cols, cv_mae):
 #######################Controller###################################
 
 def run_driver_model(run_tuning=False):
-    hist, curr, elo = load_data()
-    married = create_married_dataframe(hist, curr, elo)
-    curr_df, hist_df = divorce_dfs(married)
+    hist_df, curr_df = load_data()
 
     X, y, X_train, X_test, y_train, y_test = prepare_model_data(hist_df)
     preprocess = build_preprocessor(X)
@@ -477,11 +354,9 @@ def run_driver_model(run_tuning=False):
 
     output_predictions = predict_current_week(final_pipe, curr_df, feature_cols)
 
-    current_week_race_num, current_year = get_current_week_race_num()
+    current_year = datetime.now().year
+
     working_directory = get_working_directory()
-
-
-
 
     output_path = (
         working_directory / "data" / "predictions" / "drivers" / f"driver_predictions_{current_year}.csv"
@@ -505,11 +380,10 @@ def run_driver_model(run_tuning=False):
     }
 
 
-
 ########################Supplementary Functions##################################
 
 def naive_baseline_time_aware(hist_df, n_test_races=4):
-    target = "points"
+    target = "fantasy_points"
 
     hist_df = hist_df.copy()
     hist_df["time_id"] = hist_df["year"] * 100 + hist_df["race_num"]
@@ -544,8 +418,6 @@ def get_old_baselines(race_num):
     
     
     return mae, rmse, baseline_pred
-
-
 
 def create_correlation_matrix(hist_df): 
 
@@ -599,14 +471,13 @@ def coef_analysis(models, X_train, y_train):
 
 
 if __name__ == "__main__":
-    current_directory = get_working_directory()
-    print(f"Current Directory: {current_directory}")
+
     outputs = run_driver_model()
     print(outputs["results_df"])
     print(f"Best model: {outputs['best_name']}")
     print(outputs["predictions"].head())
     
-    
+
     #mae, rmse, baseline_pred = get_old_baselines(2)
     #print(f"Race 2 Baseline: MAE: {mae}, RMSE: {rmse}, baseline_pred: {baseline_pred}")
     #mae, rmse, baseline_pred = get_old_baselines(3)

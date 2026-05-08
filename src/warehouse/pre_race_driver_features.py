@@ -108,7 +108,7 @@ def build_pre_race_driver_features():
             date_start,
             date_end,
             circuit_short_name,
-            is_sprint_weekend,
+            CAST(is_sprint_weekend AS INTEGER) AS is_sprint_weekend,
             country_name,
             driver_id,
             constructor_id,
