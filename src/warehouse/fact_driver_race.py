@@ -59,7 +59,7 @@ def build_fact_driver_race():
         AND pts.race = r.race_num
         LEFT JOIN driver_constructor_map sd
             ON r.race_id = sd.race_id
-        AND d.driver_name = sd.driver
+        AND lower(trim(d.driver_name)) = lower(trim(sd.driver))
         LEFT JOIN dim_constructor c
             ON lower(trim(sd.constructor)) = lower(trim(c.constructor_name))
         AND r.year = c.year
@@ -73,6 +73,12 @@ def build_fact_driver_race():
         ORDER BY race_id
             
         """)
+
+
+#helper
+def get_columns():
+    fdr = read_fact_driver_race()
+    return fdr.columns
 
 def validate_fact_driver_race():
     df = read_fact_driver_race()
@@ -91,3 +97,6 @@ def read_fact_driver_race():
             SELECT * FROM fact_driver_race             
             """).df()
     return result
+
+
+

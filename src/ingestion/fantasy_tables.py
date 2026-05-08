@@ -158,7 +158,7 @@ def raw_fantasy_tables_controller():
     driver_price, driver_points, constructor_price, constructor_points = clean_and_transform_raw_dfs(dfs)
     build_raw_fantasy_table(driver_price, driver_points, constructor_price, constructor_points)
 
-
+####################################################stage###################################################
 
 def build_stage_fantasy_tables():
 

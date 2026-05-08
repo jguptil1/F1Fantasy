@@ -180,3 +180,8 @@ def read_pre_race_driver_features():
             SELECT * FROM pre_race_driver_features           
             """).df()
     return result
+
+
+def get_pre_race_driver_feature_columns():
+    prdf = read_pre_race_driver_features()
+    return prdf.columns
