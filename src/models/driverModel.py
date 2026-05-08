@@ -15,7 +15,9 @@ DATABASE_PATH = "data/database/f1_fantasy.duckdb"
 import time
 from datetime import datetime
 
-
+#predictions controller
+import predictions_controller
+import driver_predictions
 
 # Visualization
 import matplotlib.pyplot as plt
@@ -215,17 +217,6 @@ def predict_current_week(best_pipe, curr_df, feature_cols):
 
     return output_predictions
 
-def save_predictions(output_predictions, path):
-    path = Path(path)
-    #export the predictions
-
-    if path.exists():
-        in_file = pd.read_csv(path)
-        combined = pd.concat([in_file, output_predictions], ignore_index=True)
-    else:
-        combined = output_predictions.copy()
-
-    combined.to_csv(path, index=False)
 
 def hyperparameterize_models(preprocess, X_train, y_train, X_test, y_test):
     tscv = TimeSeriesSplit(n_splits=5)
@@ -322,10 +313,57 @@ def save_model_artifacts(best_pipe, best_name, feature_cols, cv_mae):
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
 
+#helper function to save model predictions
+#will be used within the run_driver_model function
+
+def save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run):
+
+    #PREDICTION RUN ROW APPEND OPERATION
+
+    new_prediction_run_id = predictions_controller.get_max_prediction_run_id() + 1
+    creation_date = datetime.now()
+    train_cutoff_race_id = load_pre_race_driver_features()["race_id"].max()
+
+
+    prediction_run_row = pd.DataFrame([{
+        "prediction_run_id": new_prediction_run_id,
+        "created_at": creation_date,
+        "model_name": model_name,
+        "model_version": model_version,
+        "feature_set_version": feature_set_version,
+        "target_variable": target_variable,
+        "is_production_run": is_production_run,
+        "train_cutoff_race_id":train_cutoff_race_id
+    }])
+
+    print(prediction_run_row)
+
+    #need to append this row
+    driver_predictions.append_driver_run(prediction_run_row)
+
+    #####DRIVER PREDICTION ROWS APPEND OPERATION
+
+    #output predicitions already has year, race_id, driver_id, price, constructor_id, predicted_points
+    new_predictions_rows = output_predictions.copy()
+    new_predictions_rows["prediction_run_id"] = new_prediction_run_id
+    new_predictions_rows['prediction_timestamp'] = creation_date
+    new_predictions_rows["model_name"] = model_name
+    new_predictions_rows['model_version'] = model_version
+    new_predictions_rows["feature_set_version"] = feature_set_version
+    new_predictions_rows['target_variable'] = target_variable
+    new_predictions_rows['train_data_cutoff'] = train_cutoff_race_id
+    new_predictions_rows['is_production_run'] = is_production_run
+
+
+
+
+    driver_predictions.append_driver_run(prediction_run_row)
+    driver_predictions.append_driver_predictions(new_predictions_rows)
+
 
 #######################Controller###################################
 
-def run_driver_model(run_tuning=False):
+def run_driver_model(model_name="v1", model_version="1", feature_set_version="1", target_variable="fantasy_points", is_production_run=False, run_tuning = False):
     hist_df, curr_df = load_data()
 
     X, y, X_train, X_test, y_train, y_test = prepare_model_data(hist_df)
@@ -354,21 +392,20 @@ def run_driver_model(run_tuning=False):
 
     output_predictions = predict_current_week(final_pipe, curr_df, feature_cols)
 
-    current_year = datetime.now().year
+    #save_predictions(output_predictions, output_path)
 
-    working_directory = get_working_directory()
-
-    output_path = (
-        working_directory / "data" / "predictions" / "drivers" / f"driver_predictions_{current_year}.csv"
-    )
-
-    save_predictions(output_predictions, output_path)
     save_model_artifacts(
         best_pipe=final_pipe,
         best_name=best_name,
         feature_cols=feature_cols,
         cv_mae=results_df.loc[0, "CV_MAE"]
     )
+
+
+    #saving predictions
+    save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run)
+
+
 
     return {
         "results_df": results_df,
@@ -470,12 +507,7 @@ def coef_analysis(models, X_train, y_train):
 
 
 
-if __name__ == "__main__":
 
-    outputs = run_driver_model()
-    print(outputs["results_df"])
-    print(f"Best model: {outputs['best_name']}")
-    print(outputs["predictions"].head())
     
 
     #mae, rmse, baseline_pred = get_old_baselines(2)
