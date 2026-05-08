@@ -151,6 +151,6 @@ def append_model_performance(df, prediction_run_id):
 
 
 
-if __name__ == "__main__":
-    mr = load_old_model_mean_results_table()
-    build_old_niave_baselines(mr)
+# if __name__ == "__main__":
+#     mr = load_old_model_mean_results_table()
+#     build_old_niave_baselines(mr)

@@ -111,7 +111,7 @@ def append_driver_predictions(df):
 
 
 
-if __name__ == "__main__":
-    preds, run = load_data()
-    build_old_fact_driver_predictions(preds)
-    build_old_driver_prediction_run(run)
+# if __name__ == "__main__":
+#     preds, run = load_data()
+#     build_old_fact_driver_predictions(preds)
+#     build_old_driver_prediction_run(run)
