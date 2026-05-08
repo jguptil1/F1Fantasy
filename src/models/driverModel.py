@@ -19,6 +19,9 @@ from datetime import datetime
 import predictions_controller
 import driver_predictions
 
+#model results
+import model_results
+
 # Visualization
 import matplotlib.pyplot as plt
 
@@ -52,9 +55,6 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error #metrics for
 #hyperparameter tuning
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 
-
-
-### Helper function #FIXME: look through this code and make sure it covers all bases. Look into april and summer break options
 
 
 #########################CORE FUNCTIONS###################################
@@ -99,6 +99,29 @@ def prepare_model_data(hist_df, n_test_races=4):
     y_test = test_df[target]
 
     return X, y, X_train, X_test, y_train, y_test
+
+def get_niave_results(hist, target):
+
+    mean_points = np.mean(hist[target])
+
+    X = hist.drop(columns=[target])
+    y = hist[target]
+
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    baseline_pred = y_train.mean()
+
+    y_pred = np.repeat(baseline_pred, len(y_test))
+    med_pred = np.repeat(y_train.median, len(y_test))   
+
+    mae = mean_absolute_error(y_test, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+    return mae, rmse
+
 
 def build_preprocessor(X):
 
@@ -217,7 +240,6 @@ def predict_current_week(best_pipe, curr_df, feature_cols):
 
     return output_predictions
 
-
 def hyperparameterize_models(preprocess, X_train, y_train, X_test, y_test):
     tscv = TimeSeriesSplit(n_splits=5)
 
@@ -319,10 +341,10 @@ def save_model_artifacts(best_pipe, best_name, feature_cols, cv_mae):
 def save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run):
 
     #PREDICTION RUN ROW APPEND OPERATION
-
+    
     new_prediction_run_id = predictions_controller.get_max_prediction_run_id() + 1
     creation_date = datetime.now()
-    train_cutoff_race_id = load_pre_race_driver_features()["race_id"].max()
+    train_cutoff_race_id = output_predictions["race_id"].max()
 
 
     prediction_run_row = pd.DataFrame([{
@@ -330,15 +352,16 @@ def save_predictions(output_predictions, model_name, model_version, feature_set_
         "created_at": creation_date,
         "model_name": model_name,
         "model_version": model_version,
+        "asset_type": "driver",
         "feature_set_version": feature_set_version,
-        "target_variable": target_variable,
-        "is_production_run": is_production_run,
-        "train_cutoff_race_id":train_cutoff_race_id
+        "target": target_variable,
+        "train_cutoff_race_id": train_cutoff_race_id
     }])
 
     print(prediction_run_row)
+    print(f'debugging: {train_cutoff_race_id}')
 
-    #need to append this row
+    #append this row to db table
     driver_predictions.append_driver_run(prediction_run_row)
 
     #####DRIVER PREDICTION ROWS APPEND OPERATION
@@ -355,10 +378,15 @@ def save_predictions(output_predictions, model_name, model_version, feature_set_
     new_predictions_rows['is_production_run'] = is_production_run
 
 
-
-
-    driver_predictions.append_driver_run(prediction_run_row)
+    #appending rows to db table
     driver_predictions.append_driver_predictions(new_predictions_rows)
+
+    return new_prediction_run_id
+    
+def save_model_performance(prediction_run_id, results_df):
+
+    model_results.append_model_performance(results_df, prediction_run_id)
+
 
 
 #######################Controller###################################
@@ -367,8 +395,12 @@ def run_driver_model(model_name="v1", model_version="1", feature_set_version="1"
     hist_df, curr_df = load_data()
 
     X, y, X_train, X_test, y_train, y_test = prepare_model_data(hist_df)
+
+
+
     preprocess = build_preprocessor(X)
     models = get_models()
+
 
     results_df, best_name, best_pipe, feature_cols, coef_tables = train_and_evaluate(
         preprocess, models, X, y, X_train, X_test, y_train, y_test
@@ -403,10 +435,27 @@ def run_driver_model(model_name="v1", model_version="1", feature_set_version="1"
 
 
     #saving predictions
-    save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run)
+    prediction_run_id = save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run)
+
+    #saving model performance
+
+    ### niave baseline resilts
+    baseline_mae, baseline_rmse = get_niave_results(hist_df, target=target_variable) 
+    model_results.append_niave_baseline(prediction_run_id, baseline_mae, baseline_rmse) 
+
+    # print("___________________Debug_________________")
+
+    # print(output_predictions.columns.tolist())
+    # print(output_predictions.head())
+    # print(output_predictions["race_id"])
+    # print(output_predictions["race_id"].dtype)
 
 
+    # print(output_predictions['race_id'].max())
 
+    save_model_performance(prediction_run_id, results_df) 
+        
+    
     return {
         "results_df": results_df,
         "best_name": final_model_name,
@@ -442,7 +491,6 @@ def naive_baseline_time_aware(hist_df, n_test_races=4):
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 
     return mae, rmse, baseline_pred
-
 
 def get_old_baselines(race_num):
     hist, curr, elo = load_data()

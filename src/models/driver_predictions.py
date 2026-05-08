@@ -47,15 +47,29 @@ def build_old_predictions():
     build_old_driver_prediction_run(old_runs)
     build_old_fact_driver_predictions(driver_preds)
 
+
+
 def append_driver_run(df):
 
-    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+    insert_cols = [
+        "prediction_run_id",
+        "created_at",
+        "model_name",
+        "model_version",
+        "feature_set_version",
+        "target",
+        "train_cutoff_race_id",
+        "asset_type"
+    ]
 
+    df = df[insert_cols].copy()
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
         con.register("temp_prediction_run", df)
 
-        con.execute("""
-            INSERT INTO prediction_run
-            SELECT *
+        con.execute(f"""
+            INSERT INTO prediction_run ({", ".join(insert_cols)})
+            SELECT {", ".join(insert_cols)}
             FROM temp_prediction_run
         """)
 
@@ -65,14 +79,39 @@ def append_driver_run(df):
 
 def append_driver_predictions(df):
 
-    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
+    insert_cols = [
+        "prediction_run_id",
+        "prediction_timestamp",
+        "model_name",
+        "model_version",
+        "feature_set_version",
+        "target_variable",
+        "train_data_cutoff",
+        "is_production_run",
+        "year",
+        "race_id",
+        "driver_id",
+        "constructor_id",
+        "price",
+        "predicted_points"
+    ]
 
+    df = df[insert_cols].copy()
+
+    with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
         con.register("temp_driver_predictions", df)
 
-        con.execute("""
-            INSERT INTO fact_driver_predictions
-            SELECT *
+        con.execute(f"""
+            INSERT INTO fact_driver_predictions ({", ".join(insert_cols)})
+            SELECT {", ".join(insert_cols)}
             FROM temp_driver_predictions
         """)
 
     print(f"Appended {len(df)} row(s) to fact_driver_predictions")
+
+
+
+if __name__ == "__main__":
+    preds, run = load_data()
+    build_old_fact_driver_predictions(preds)
+    build_old_driver_prediction_run(run)

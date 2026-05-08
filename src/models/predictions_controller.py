@@ -1,5 +1,4 @@
 import duckdb
-import driver_predictions
 
 
 def read_prediction_run():
