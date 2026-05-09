@@ -47,7 +47,7 @@ def build_old_predictions():
     build_old_driver_prediction_run(old_runs)
     build_old_fact_driver_predictions(driver_preds)
 
-
+######################new prediction runs######################
 
 def append_driver_run(df):
 
@@ -74,7 +74,6 @@ def append_driver_run(df):
         """)
 
     print(f"Appended {len(df)} row(s) to prediction_run")
-
 
 
 def append_driver_predictions(df):
@@ -111,7 +110,7 @@ def append_driver_predictions(df):
 
 
 
-# if __name__ == "__main__":
-#     preds, run = load_data()
-#     build_old_fact_driver_predictions(preds)
-#     build_old_driver_prediction_run(run)
+if __name__ == "__main__":
+    preds, run = load_data()
+    build_old_fact_driver_predictions(preds)
+    build_old_driver_prediction_run(run)

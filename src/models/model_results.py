@@ -11,11 +11,13 @@ import pandas as pd
 #these tables have been created 5/8/2026 and the methods should not be used moving forward and will not be in scope of the predictions controller
 
 def load_old_model_performance_table():
-    old_model_results = pd.read_csv("src\predictions\old_model_performance.csv") # type: ignore
+    old_model_results = pd.read_csv("src\predictions\old_model_performance.csv")
+    print("loaded old model performance table")
     return old_model_results
 
 def load_old_model_mean_results_table():
-    old_model_results = pd.read_csv("src\predictions\old_niave_baselines.csv") # type: ignore
+    old_model_results = pd.read_csv("src\predictions\old_niave_baselines.csv")
+    print("loaded old model mean results")
     return old_model_results
 
 
@@ -31,6 +33,8 @@ def build_old_fact_model_results(old_table):
             SELECT *
             FROM old_temp_performance
             """)
+        
+        print("built old fact model results")
 
 
 def build_old_niave_baselines(old_table):
@@ -44,6 +48,8 @@ def build_old_niave_baselines(old_table):
             SELECT *
             FROM old_temp_baselines
             """)
+        
+        print("built old niave baseline table")
 
 
 def read_niave_baseline():
@@ -153,4 +159,6 @@ def append_model_performance(df, prediction_run_id):
 
 # if __name__ == "__main__":
 #     mr = load_old_model_mean_results_table()
+#     mp = load_old_model_performance_table()
 #     build_old_niave_baselines(mr)
+#     build_old_fact_model_results(mp)

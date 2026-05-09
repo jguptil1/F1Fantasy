@@ -100,22 +100,22 @@ def prepare_model_data(hist_df, n_test_races=4):
 
     return X, y, X_train, X_test, y_train, y_test
 
-def get_niave_results(hist, target):
 
-    mean_points = np.mean(hist[target])
+def get_niave_results(hist_df, target):
 
-    X = hist.drop(columns=[target])
-    y = hist[target]
-
+    X = hist_df.drop(columns=[target])
+    y = hist_df[target]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X,
+        y,
+        test_size=0.2,
+        random_state=42
     )
 
     baseline_pred = y_train.mean()
 
     y_pred = np.repeat(baseline_pred, len(y_test))
-    med_pred = np.repeat(y_train.median, len(y_test))   
 
     mae = mean_absolute_error(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
@@ -318,7 +318,7 @@ def hyperparameterize_models(preprocess, X_train, y_train, X_test, y_test):
     return tuning_results_df, best_name, best_pipe
 
 def save_model_artifacts(best_pipe, best_name, feature_cols, cv_mae):
-    out_dir = Path("models")
+    out_dir = Path("model_metadata/driver")
     out_dir.mkdir(exist_ok=True)
 
     model_path = out_dir / f"{best_name.lower()}_best_pipe.joblib"
@@ -330,6 +330,7 @@ def save_model_artifacts(best_pipe, best_name, feature_cols, cv_mae):
         "model_name": best_name,
         "cv_mae": float(cv_mae),
         "features": feature_cols,
+        "asset_type": "driver"
     }
 
     with open(meta_path, "w") as f:
@@ -338,13 +339,12 @@ def save_model_artifacts(best_pipe, best_name, feature_cols, cv_mae):
 #helper function to save model predictions
 #will be used within the run_driver_model function
 
-def save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run):
+def save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run, train_cutoff_race_id):
 
     #PREDICTION RUN ROW APPEND OPERATION
     
     new_prediction_run_id = predictions_controller.get_max_prediction_run_id() + 1
     creation_date = datetime.now()
-    train_cutoff_race_id = output_predictions["race_id"].max()
 
 
     prediction_run_row = pd.DataFrame([{
@@ -433,9 +433,10 @@ def run_driver_model(model_name="v1", model_version="1", feature_set_version="1"
         cv_mae=results_df.loc[0, "CV_MAE"]
     )
 
+    train_cutoff_race_id = hist_df["race_id"].max()
 
     #saving predictions
-    prediction_run_id = save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run)
+    prediction_run_id = save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run, train_cutoff_race_id)
 
     #saving model performance
 

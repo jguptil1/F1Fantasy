@@ -1,0 +1,25 @@
+{
+  "model_name": "LightGBM",
+  "cv_mae": 17.10896959850962,
+  "features": [
+    "year",
+    "race_id",
+    "date_start",
+    "date_end",
+    "circuit_short_name",
+    "is_sprint_weekend",
+    "country_name",
+    "constructor_id",
+    "price",
+    "price_change_prev_race",
+    "price_change_pct_prev_race",
+    "points_last_5_avg",
+    "points_last_3_avg",
+    "ppm_last_5",
+    "ppm_last_3",
+    "momentum",
+    "price_increase",
+    "price_decrease"
+  ],
+  "asset_type": "constructor"
+}

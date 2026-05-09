@@ -1,4 +1,9 @@
+import pandas as pd
+
 import driverModel
+import constructorModel
+import constructor_predictions
+
 
 def main():
 
@@ -10,6 +15,15 @@ def main():
     print(f"Best model: {driver_output['best_name']}")
     print(driver_output["predictions"].head())
 
+
+    constructor_predictions.clear_constructor_prediction_tables()
+    constructor_predictions.build_fact_constructor_predictions()
+    constructor_output = constructorModel.run_constructor_model(model_name="v1_constructor", model_version="1", feature_set_version="1", target_variable="fantasy_points", is_production_run=False, run_tuning = False)
+    print("-------------")
+    print("model results")
+    print(constructor_output["results_df"])
+    print(f"Best model: {constructor_output['best_name']}")
+    print(constructor_output["predictions"].head())
 
 
 
