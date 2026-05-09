@@ -342,10 +342,10 @@ def constructors_pipeline(update:bool, year=2026):
 
     if not update:
         #building and writing the raw table
-        #build_raw_constructors_table_controller()
+        build_raw_constructors_table_controller()
 
         #stage
-        #build_stage_constructors_controller()
+        build_stage_constructors_controller()
 
         #warehouse
         build_constructor_dim_table()

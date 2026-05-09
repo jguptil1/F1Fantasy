@@ -104,10 +104,10 @@ def main():
         #"meetings": "build", #this update includes updating the dim_race table #FIXME: update does not work
         #"sessions":"build",
         #"drivers": "update",
-        #"fantasy_tables": "update", #default build
-        "constructors": "update",
-        "placements": "update",
-        "elo": "update" #doesnt matter, will always build
+        "fantasy_tables": "build", #default build
+        "constructors": "build",
+        #"placements": "update",
+        #"elo": "update" #doesnt matter, will always build
     }
 
     run_pipeline(plan)

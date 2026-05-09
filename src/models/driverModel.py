@@ -443,15 +443,6 @@ def run_driver_model(model_name="v1", model_version="1", feature_set_version="1"
     baseline_mae, baseline_rmse = get_niave_results(hist_df, target=target_variable) 
     model_results.append_niave_baseline(prediction_run_id, baseline_mae, baseline_rmse) 
 
-    # print("___________________Debug_________________")
-
-    # print(output_predictions.columns.tolist())
-    # print(output_predictions.head())
-    # print(output_predictions["race_id"])
-    # print(output_predictions["race_id"].dtype)
-
-
-    # print(output_predictions['race_id'].max())
 
     save_model_performance(prediction_run_id, results_df) 
         
