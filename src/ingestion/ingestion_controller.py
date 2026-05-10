@@ -5,6 +5,7 @@ import constructor
 import fantasy_tables
 import placements
 import elo_ingestion
+import budget
 
 
 #processing speed
@@ -90,6 +91,14 @@ def run_pipeline(plan: dict):
         print("UPDATING ELO")
         elo_ingestion.elo_pipeline(update=True)
 
+    #budget table
+    if plan.get("budget") == "build":
+        print("BUILDING BUDGET")
+        budget.budget_controller()
+    elif plan.get("budget") == "update":
+        print("UPDATING BUDGET")
+        budget.budget_controller()
+
 
 
 
@@ -104,10 +113,11 @@ def main():
         #"meetings": "build", #this update includes updating the dim_race table #FIXME: update does not work
         #"sessions":"build",
         #"drivers": "update",
-        "fantasy_tables": "build", #default build
-        "constructors": "build",
+        #"fantasy_tables": "build", #default build
+        #"constructors": "build",
         #"placements": "update",
         #"elo": "update" #doesnt matter, will always build
+        "budget": "build"
     }
 
     run_pipeline(plan)
