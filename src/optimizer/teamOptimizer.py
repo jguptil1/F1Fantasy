@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 from pathlib import Path
-
+import pulp
 from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, GLPK_CMD, value
 
 # pulp: underlying optimization engine
@@ -69,8 +69,8 @@ def optimize_team(
     cons = cons.copy()
 
     # Basic validation for debugging
-    needed_driver_cols = {"driver", "constructor", "price", points_col}
-    needed_cons_cols = {"constructor", "price", points_col}
+    needed_driver_cols = {"driver_id", "constructor_id", "price", points_col}
+    needed_cons_cols = {"constructor_id", "price", points_col}
 
     if not needed_driver_cols.issubset(drivers.columns):
         raise ValueError(
@@ -82,8 +82,8 @@ def optimize_team(
         )
 
     # Normalize team keys
-    drivers["team_key"] = drivers["constructor"].astype(str).str.strip().str.upper()
-    cons["team_key"] = cons["constructor"].astype(str).str.strip().str.upper()
+    drivers["team_key"] = drivers["constructor_id"].astype(str).str.strip().str.upper()
+    cons["team_key"] = cons["constructor_id"].astype(str).str.strip().str.upper()
 
     # Coerce to numeric types where needed
     drivers["price"] = pd.to_numeric(drivers["price"], errors="coerce")
@@ -92,8 +92,8 @@ def optimize_team(
     cons[points_col] = pd.to_numeric(cons[points_col], errors="coerce")
 
     # Drop rows with missing essentials
-    drivers = drivers.dropna(subset=["driver", "constructor", "price", points_col]).reset_index(drop=True)
-    cons = cons.dropna(subset=["constructor", "price", points_col]).reset_index(drop=True)
+    drivers = drivers.dropna(subset=["driver_id", "constructor_id", "price", points_col]).reset_index(drop=True)
+    cons = cons.dropna(subset=["constructor_id", "price", points_col]).reset_index(drop=True)
 
     # Indices
     d_idx = drivers.index.tolist()
@@ -218,7 +218,13 @@ def optimize_team(
     prob += obj #prob is just the optimization container
 
     ########SOLVE############
-    solver = GLPK_CMD(msg=solver_msg)
+    cbc_path = Path(r"C:\Users\jackg\miniconda3\envs\f1_dev\Library\bin\cbc.exe")
+
+    solver = pulp.COIN_CMD(
+        path=str(cbc_path),
+        msg=solver_msg
+    )
+
     prob.solve(solver)
 
     # Extract results

@@ -9,7 +9,7 @@ def pull_driver_predictions():
     with duckdb.connect("data/database/f1_fantasy.duckdb", read_only=True) as con:
         result = con.execute("""
             SELECT *
-            FROM fact_constructor_predictions
+            FROM fact_driver_predictions
                 """).df()
     return result
 def pull_constructor_predictions():
@@ -40,6 +40,24 @@ def pull_constructor_dim():
             FROM dim_constructor
                 """).df()
     return result
+def pull_race_dim():
+    with duckdb.connect("data/database/f1_fantasy.duckdb", read_only=True) as con:
+        result = con.execute("""
+            SELECT *
+            FROM dim_race
+                """).df()
+    return result
+
+
+def get_last_race_lineup():
+    last_race_lineup  = {} #empty init
+
+
+    # return object should look like this: 
+    # last_week_lineup = {
+    # "drivers": {"RUS", "BEA", "HAD", "HUL", "LAW"}, 
+    # "constructors": {"MER", "RB"}
+    #}   
 
 
 
@@ -120,25 +138,28 @@ def pre_race_weekend_optimizer_controller():
     driver_predictions_df = pull_driver_predictions()
     constructor_predictions_df = pull_constructor_predictions()
     budgets = pull_budgets()
+
     #helper pulls to merge to eventual output as ID's are only present in prediction tables
     drivers = pull_driver_dim()
     constructors = pull_constructor_dim()
 
-
-    #print(driver_predictions_df.columns.tolist())
-
-
     driver_predictions_df = filter_driver_query(driver_predictions_df, race_id = 77, prediction_run_id=5)
     constructor_predictions_df = filter_driver_query(constructor_predictions_df, race_id = 77, prediction_run_id=6)
     budget = filter_budget_query(budgets, race=7)
-    print(budget)
 
 
     drivers_selected_df, constructors_selected_df, summary_dict = run_optimizer(budget = budget, drivers=driver_predictions_df, cons = constructor_predictions_df)
+    print("--------------------------------------------------------DRIVERS---------------------------------------------------------------")
+    print(drivers_selected_df)
 
-    # print(driver_predictions_df.head())
-    # print(constructor_predictions_df.head())
-    # print(budgets.head())
+
+    print("-----------------------------------------------------Constructors------------------------------------------------------------")
+    print(constructors_selected_df)
+
+
+    print("---------------------------------------------------------Summary------------------------------------------------------------")
+    print(summary_dict)
+
 
 
 if __name__ == "__main__":
