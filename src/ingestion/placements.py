@@ -144,6 +144,21 @@ def update_raw_driver_placements(year):
 
 #########Staging####################
 
+#helper
+DRIVER_NAME_MAP = {
+    "guanyu zhou": "zhou guanyu",
+    "andrea kimi antonelli": "kimi antonelli",
+}
+
+
+def normalize_driver_name(name):
+    if name is None:
+        return None
+
+    cleaned = name.strip().lower()
+    return DRIVER_NAME_MAP.get(cleaned, cleaned)
+
+
 def stage_driver_placements():
     with duckdb.connect(DATABASE_PATH, read_only=True) as con:
         raw_table = con.execute("""
@@ -155,8 +170,12 @@ def stage_driver_placements():
         subset=["race_id", "meeting_key", "session_key", "year", "race_name", "FullName"]
     )
 
+
     raw_table["driver"] = raw_table["FullName"].str.lower()
     raw_table["constructor"] = raw_table["TeamName"].str.lower()
+
+    raw_table["driver"] = raw_table["FullName"].apply(normalize_driver_name)
+    raw_table["constructor"] = raw_table["TeamName"].str.strip().str.lower()    
 
     dnf_statuses = [
         "Retired",

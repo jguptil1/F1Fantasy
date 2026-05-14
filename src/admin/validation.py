@@ -1,0 +1,244 @@
+from pathlib import Path
+import duckdb
+
+
+DATABASE_PATH = Path("data/database/f1_fantasy.duckdb")
+
+
+EXPECTED_TABLES = [
+    "dim_driver",
+    "dim_constructor",
+    "dim_race",
+    "fact_driver_race",
+    "fact_constructor_race",
+    "pre_race_driver_features",
+    "pre_race_constructor_features",
+    "current_race_driver_features",
+    "current_race_constructor_features",
+    "prediction_run",
+    "fact_driver_predictions",
+    "fact_constructor_predictions",
+]
+
+
+EXPECTED_GRAINS = {
+    "dim_driver": ["driver_id"],
+    "dim_constructor": ["year", "constructor_id"],
+    "dim_race": ["race_id"],
+    "fact_driver_race": ["race_id", "driver_id"],
+    "fact_constructor_race": ["race_id", "constructor_id"],
+    "pre_race_driver_features": ["race_id", "driver_id"],
+    "pre_race_constructor_features": ["race_id", "constructor_id"],
+    "current_race_driver_features": ["race_id", "driver_id"],
+    "current_race_constructor_features": ["race_id", "constructor_id"],
+    "prediction_run": ["prediction_run_id"],
+    "fact_driver_predictions": ["prediction_run_id", "race_id", "driver_id"],
+    "fact_constructor_predictions": ["prediction_run_id", "race_id", "constructor_id"],
+}
+
+
+REQUIRED_COLUMNS = {
+    "dim_driver": ["driver_id", "driver_name", "name_acronym"],
+    "dim_constructor": ["constructor_id", "year", "constructor_name"],
+    "dim_race": ["race_id", "year", "race_num", "race_name"],
+
+    "fact_driver_race": [
+        "race_id", "year", "driver_id", "constructor_id",
+        "price", "fantasy_points", "elo_before"
+    ],
+
+    "fact_constructor_race": [
+        "race_id", "year", "constructor_id",
+        "price", "fantasy_points"
+    ],
+
+    "pre_race_driver_features": [
+        "race_id", "year", "driver_id", "constructor_id",
+        "price", "elo_before"
+    ],
+
+    "pre_race_constructor_features": [
+        "race_id", "year", "constructor_id", "price"
+    ],
+
+    "current_race_driver_features": [
+        "race_id", "year", "driver_id", "constructor_id",
+        "price", "elo_before"
+    ],
+
+    "current_race_constructor_features": [
+        "race_id", "year", "constructor_id", "price"
+    ],
+
+    "prediction_run": [
+        "prediction_run_id", "created_at", "model_name",
+        "model_version", "feature_set_version", "target",
+        "train_cutoff_race_id", "asset_type"
+    ],
+
+    "fact_driver_predictions": [
+        "prediction_run_id", "year", "race_id", "driver_id",
+        "constructor_id", "price", "predicted_points"
+    ],
+
+    "fact_constructor_predictions": [
+        "prediction_run_id", "year", "race_id", "constructor_id",
+        "price", "predicted_points"
+    ],
+}
+
+
+REQUIRED_NOT_NULL_COLUMNS = {
+    table: cols for table, cols in REQUIRED_COLUMNS.items()
+}
+
+
+def connect_db(database_path: Path = DATABASE_PATH):
+    return duckdb.connect(str(database_path), read_only=True)
+
+
+def get_table_names(con) -> set[str]:
+    rows = con.execute("SHOW TABLES").fetchall()
+    return {row[0] for row in rows}
+
+
+def get_column_names(con, table_name: str) -> list[str]:
+    df = con.execute(f"DESCRIBE {table_name}").df()
+    return df["column_name"].tolist()
+
+
+def validate_table_exists(con, table_name: str):
+    existing_tables = get_table_names(con)
+
+    if table_name not in existing_tables:
+        raise ValueError(f"Missing expected table: {table_name}")
+
+    print(f"PASS: {table_name} exists")
+
+
+def validate_no_column_whitespace(con, table_name: str):
+    columns = get_column_names(con, table_name)
+    bad_columns = [col for col in columns if col != col.strip()]
+
+    if bad_columns:
+        raise ValueError(
+            f"{table_name} has columns with leading/trailing whitespace: {bad_columns}"
+        )
+
+    print(f"PASS: {table_name} has no column whitespace issues")
+
+
+def validate_required_columns(con, table_name: str, required_columns: list[str]):
+    existing_columns = set(get_column_names(con, table_name))
+    missing_columns = [col for col in required_columns if col not in existing_columns]
+
+    if missing_columns:
+        raise ValueError(
+            f"{table_name} is missing required columns: {missing_columns}"
+        )
+
+    print(f"PASS: {table_name} has required columns")
+
+
+def validate_no_nulls(con, table_name: str, required_columns: list[str]):
+    failed = {}
+
+    for col in required_columns:
+        null_count = con.execute(f"""
+            SELECT COUNT(*)
+            FROM {table_name}
+            WHERE {col} IS NULL
+        """).fetchone()[0]
+
+        if null_count > 0:
+            failed[col] = null_count
+
+    if failed:
+        for col in failed:
+            sample = con.execute(f"""
+                SELECT *
+                FROM {table_name}
+                WHERE {col} IS NULL
+                LIMIT 10
+            """).df()
+
+            print(f"\nSample rows from {table_name} where {col} is NULL:")
+            print(sample)
+
+        raise ValueError(
+            f"{table_name} has nulls in required columns: {failed}"
+        )
+
+    print(f"PASS: {table_name} has no nulls in required columns")
+
+
+def validate_unique_grain(con, table_name: str, grain_columns: list[str]):
+    grain_sql = ", ".join(grain_columns)
+
+    query = f"""
+        SELECT
+            {grain_sql},
+            COUNT(*) AS row_count
+        FROM {table_name}
+        GROUP BY {grain_sql}
+        HAVING COUNT(*) > 1
+    """
+
+    duplicates = con.execute(query).df()
+
+    if not duplicates.empty:
+        raise ValueError(
+            f"{table_name} failed grain check on {grain_columns}. "
+            f"Duplicate groups found: {len(duplicates)}"
+        )
+
+    print(f"PASS: {table_name} grain is unique on {grain_columns}")
+
+
+def validate_table_not_empty(con, table_name: str):
+    row_count = con.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
+
+    if row_count == 0:
+        raise ValueError(f"{table_name} is empty")
+
+    print(f"PASS: {table_name} is not empty ({row_count} rows)")
+
+
+def validate_phase_1_mvp(database_path: Path = DATABASE_PATH):
+    print("Running Phase 1 database validation checks...")
+    print("-" * 60)
+
+    with connect_db(database_path) as con:
+        for table_name in EXPECTED_TABLES:
+            validate_table_exists(con, table_name)
+            validate_table_not_empty(con, table_name)
+            validate_no_column_whitespace(con, table_name)
+
+            if table_name in REQUIRED_COLUMNS:
+                validate_required_columns(
+                    con,
+                    table_name,
+                    REQUIRED_COLUMNS[table_name]
+                )
+
+            if table_name in REQUIRED_NOT_NULL_COLUMNS:
+                validate_no_nulls(
+                    con,
+                    table_name,
+                    REQUIRED_NOT_NULL_COLUMNS[table_name]
+                )
+
+            if table_name in EXPECTED_GRAINS:
+                validate_unique_grain(
+                    con,
+                    table_name,
+                    EXPECTED_GRAINS[table_name]
+                )
+
+            print("-" * 60)
+
+    print("All Phase 1 validation checks passed.")
+
+
+if __name__ == "__main__":
+    validate_phase_1_mvp()

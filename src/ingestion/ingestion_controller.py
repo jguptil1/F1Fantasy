@@ -112,12 +112,12 @@ def main():
     plan = {
         #"meetings": "build", #this update includes updating the dim_race table #FIXME: update does not work
         #"sessions":"build",
-        #"drivers": "update",
+        #"drivers": "build",
         #"fantasy_tables": "build", #default build
         #"constructors": "build",
-        #"placements": "update",
-        #"elo": "update" #doesnt matter, will always build
-        "budget": "build"
+        #"placements": "build",
+        #"elo": "build", #doesnt matter, will always build
+        #"budget": "build"
     }
 
     run_pipeline(plan)
