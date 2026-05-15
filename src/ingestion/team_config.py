@@ -23,27 +23,27 @@ def load_raw_file_path():
 
     cwd = load_working_directory()
 
-    return cwd / "data" / "raw" / "newHistPointAndPrice.xlsx"
+    return cwd / "data" / "raw" / "driver_config.xlsx"
 
 
-def load_budget_sheet():
-  df = pd.read_excel(load_raw_file_path(), sheet_name="WEEKLY BUDGET")
+def load_team_config_sheet():
+  df = pd.read_excel(load_raw_file_path(), sheet_name="DRIVER CONFIG")
   return df
 
 
-def build_budget_table(budget_sheet):
+def build_team_config_table(budget_sheet):
         
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
 
-        con.register("budget_sheet_temp_df", budget_sheet)
+        con.register("team_sheet_df_temp", budget_sheet)
 
         con.execute("""
-        CREATE OR REPLACE TABLE fact_budget_table AS
+        CREATE OR REPLACE TABLE fact_team_config AS
         SELECT *
-        FROM budget_sheet_temp_df
+        FROM team_sheet_df_temp
         """)
 
 
-def budget_controller():
-   sheet = load_budget_sheet()
-   build_budget_table(budget_sheet = sheet)
+def team_config_controller():
+   sheet = load_team_config_sheet()
+   build_team_config_table(budget_sheet = sheet)

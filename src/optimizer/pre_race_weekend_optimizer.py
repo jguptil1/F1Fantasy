@@ -4,7 +4,7 @@ import duckdb
 
 import teamOptimizer
 
-#helper data pull functions
+#helper SQL views
 def pull_driver_predictions():
     with duckdb.connect("data/database/f1_fantasy.duckdb", read_only=True) as con:
         result = con.execute("""
@@ -47,6 +47,34 @@ def pull_race_dim():
             FROM dim_race
                 """).df()
     return result
+def pull_constructor_mapping(year = 2026):
+    with duckdb.connect("data/database/f1_fantasy.duckdb", read_only=True) as con:
+
+        df = con.execute(f"""
+            SELECT DISTINCT
+                constructor_id,
+                constructor_name
+            FROM fact_constructor_race
+            WHERE year = {year}
+            ORDER BY constructor_name
+            """).df()
+
+    return df
+def pull_driver_mapping(year = 2026):
+    with duckdb.connect("data/database/f1_fantasy.duckdb", read_only=True) as con:
+
+        df = con.execute(f"""
+            SELECT DISTINCT
+                driver_id,
+                driver_name
+            FROM fact_driver_race
+            WHERE year = {year}
+            ORDER BY driver_name
+            """).df()
+
+    return df
+
+
 
 
 def get_last_race_lineup():

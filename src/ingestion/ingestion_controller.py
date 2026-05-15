@@ -6,6 +6,7 @@ import fantasy_tables
 import placements
 import elo_ingestion
 import budget
+import team_config
 
 
 #processing speed
@@ -99,6 +100,15 @@ def run_pipeline(plan: dict):
         print("UPDATING BUDGET")
         budget.budget_controller()
 
+    #team conffiguration table
+    if plan.get("teamConfiguration") == "build":
+        print("BUILDING TEAM CONFIG")
+        team_config.team_config_controller()
+    elif plan.get("budget") == "update":
+        print("BUILDING TEAM CONFIG")
+        team_config.team_config_controller()
+
+
 
 
 
@@ -117,7 +127,8 @@ def main():
         #"constructors": "build",
         #"placements": "build",
         #"elo": "build", #doesnt matter, will always build
-        #"budget": "build"
+        #"budget": "build",
+        "teamConfiguration": "build"
     }
 
     run_pipeline(plan)
