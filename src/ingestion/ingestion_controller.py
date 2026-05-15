@@ -128,7 +128,7 @@ def main():
         #"placements": "build",
         #"elo": "build", #doesnt matter, will always build
         #"budget": "build",
-        "teamConfiguration": "build"
+        #"teamConfiguration": "build"
     }
 
     run_pipeline(plan)

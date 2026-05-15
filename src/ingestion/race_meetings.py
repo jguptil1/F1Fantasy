@@ -248,7 +248,7 @@ def build_dim_race():
                 SELECT DISTINCT
                     meeting_key
                 FROM staged_race_sessions_table
-                WHERE session_type = 'Sprint'
+                WHERE lower(trim(session_name)) LIKE '%sprint%'
             """).df()["meeting_key"].to_list()
 
 

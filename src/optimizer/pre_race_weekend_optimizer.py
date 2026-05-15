@@ -216,8 +216,8 @@ def pre_race_weekend_optimizer_controller():
     drivers = pull_driver_dim()
     constructors = pull_constructor_dim()
 
-    driver_predictions_df = filter_driver_query(driver_predictions_df, race_id = 77, prediction_run_id=9)
-    constructor_predictions_df = filter_constructor_query(constructor_predictions_df, race_id = 77, prediction_run_id=10)
+    driver_predictions_df = filter_driver_query(driver_predictions_df, race_id = 77, prediction_run_id=11)
+    constructor_predictions_df = filter_constructor_query(constructor_predictions_df, race_id = 77, prediction_run_id=12)
     budget = filter_budget_query(budgets, race=7)
 
     last_race_lineup = get_last_race_lineup(race = 6)

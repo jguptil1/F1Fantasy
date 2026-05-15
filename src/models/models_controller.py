@@ -7,7 +7,7 @@ import constructor_predictions
 
 def main():
 
-    driver_output = driverModel.run_driver_model(model_name="v1", model_version="1", feature_set_version="1", target_variable="fantasy_points", is_production_run=False, run_tuning = False)
+    driver_output = driverModel.run_driver_model(model_name="v1", model_version="1", feature_set_version="2", target_variable="fantasy_points", is_production_run=False, run_tuning = False)
 
     print("-------------")
     print("model results")
@@ -18,7 +18,7 @@ def main():
 
     
     
-    constructor_output = constructorModel.run_constructor_model(model_name="v1_constructor", model_version="1", feature_set_version="1", target_variable="fantasy_points", is_production_run=False, run_tuning = False)
+    constructor_output = constructorModel.run_constructor_model(model_name="v1_constructor", model_version="1", feature_set_version="2", target_variable="fantasy_points", is_production_run=False, run_tuning = False)
     print("-------------")
     print("model results")
     print(constructor_output["results_df"])
