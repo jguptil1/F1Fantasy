@@ -153,12 +153,3 @@ def append_model_performance(df, prediction_run_id):
         """)
 
     print(f"Appended {len(df)} row(s) to fact_model_results")
-
-
-
-
-# if __name__ == "__main__":
-#     mr = load_old_model_mean_results_table()
-#     mp = load_old_model_performance_table()
-#     build_old_niave_baselines(mr)
-#     build_old_fact_model_results(mp)

@@ -243,19 +243,52 @@ def optimize_team(
         .reset_index(drop=True)
     )
 
+    #DRIVER TRANSFER IN FLAG
+    if last_week_lineup is not None:
+
+        prior_driver_ids = {
+            int(driver_id)
+            for driver_id in last_week_lineup["drivers"]
+        }
+
+        drivers_sel["is_transfer_in"] = (
+            ~drivers_sel["driver_id"].isin(prior_driver_ids)
+        )
+
+    else:
+        drivers_sel["is_transfer_in"] = False
+
+
+    #CONSTRUCTOR TRANSFER IN FLAG
+    if last_week_lineup is not None:
+
+        prior_constructor_ids = {
+            int(constructor_id)
+            for constructor_id in last_week_lineup["constructors"]
+        }
+
+        cons_sel["is_transfer_in"] = (
+            ~cons_sel["constructor_id"].isin(prior_constructor_ids)
+        )
+
+    else:
+        cons_sel["is_transfer_in"] = False
+
+
+
     # DRS driver
     drs_driver = None
     if use_drs:
         drs_picks = [i for i in d_idx if value(z_drs[i]) == 1] # type: ignore
         if drs_picks:
-            drs_driver = drivers.loc[drs_picks[0], "driver"]
+            drs_driver = drivers.loc[drs_picks[0], "driver_id"]
 
     total_price = float(drivers_sel["price"].sum() + cons_sel["price"].sum())
     gross_points = float(drivers_sel[points_col].sum() + cons_sel[points_col].sum())
 
     if use_drs and drs_driver is not None:
         drs_points = float(
-            drivers_sel.loc[drivers_sel["driver"] == drs_driver, points_col].iloc[0]
+            drivers_sel.loc[drivers_sel["driver_id"] == drs_driver, points_col].iloc[0]
         )
         gross_points += (drs_multiplier - 1.0) * drs_points
     
@@ -277,6 +310,7 @@ def optimize_team(
             "paid_transfers": paid_transfers_val, # type: ignore
             "transfer_penalty": transfer_penalty, # type: ignore
             "net_points": round(net_points, 2), # type: ignore
+            "drs_driver": drs_driver,
         }
 
     else:

@@ -107,10 +107,3 @@ def append_driver_predictions(df):
         """)
 
     print(f"Appended {len(df)} row(s) to fact_driver_predictions")
-
-
-
-if __name__ == "__main__":
-    preds, run = load_data()
-    build_old_fact_driver_predictions(preds)
-    build_old_driver_prediction_run(run)

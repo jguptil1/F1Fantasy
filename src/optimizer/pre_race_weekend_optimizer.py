@@ -19,8 +19,12 @@ def pull_driver_predictions():
 def pull_constructor_predictions():
     with duckdb.connect("data/database/f1_fantasy.duckdb", read_only=True) as con:
         result = con.execute("""
-            SELECT *
-            FROM fact_constructor_predictions
+            SELECT
+                p.*,
+                c.constructor_name
+            FROM fact_constructor_predictions AS p
+            LEFT JOIN dim_constructor AS c
+                ON p.constructor_id = c.constructor_id
                 """).df()
     return result
 def pull_budgets():
@@ -187,12 +191,12 @@ def run_optimizer(budget, drivers, cons, last_week_lineup):
         drivers=drivers,
         cons=cons,
         last_week_lineup=last_week_lineup,
-        free_transfers_avail=2,
+        free_transfers_avail=3,
         points_col="predicted_points",
         n_drivers=5,
         n_constructors=2,
         max_drivers_per_team=None,
-        use_drs=False,
+        use_drs=True,
         drs_multiplier=2.0,
         solver_msg=False,
         require_driver_from_each_constructor=False,
@@ -232,7 +236,4 @@ def pre_race_weekend_optimizer_controller():
     print("---------------------------------------------------------Summary------------------------------------------------------------")
     print(summary_dict)
 
-
-
-if __name__ == "__main__":
-    pre_race_weekend_optimizer_controller()
+    return drivers_selected_df, constructors_selected_df, summary_dict
