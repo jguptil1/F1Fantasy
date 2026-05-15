@@ -1,6 +1,6 @@
 {
   "model_name": "LightGBM",
-  "cv_mae": 10.316998562357785,
+  "cv_mae": 10.308873899939517,
   "features": [
     "year",
     "race_id",

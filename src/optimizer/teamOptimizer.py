@@ -176,33 +176,32 @@ def optimize_team(
     #Optional: Transfer aware constraints
     # Optional: Transfer aware constraints
     if last_week_lineup is not None:
-        # Normalize prior lineup identifiers
-        prior_drivers = {
-            str(driver).strip().upper()
-            for driver in last_week_lineup["drivers"]
-        }
-        prior_constructors = {
-            str(constructor).strip().upper()
-            for constructor in last_week_lineup["constructors"]
+        # Prior lineup should now use database IDs, not names/acronyms
+        prior_driver_ids = {
+            int(driver_id)
+            for driver_id in last_week_lineup["drivers"]
         }
 
-        # Normalize current driver identifiers for matching
-        drivers["driver_key"] = drivers["driver"].astype(str).str.strip().str.upper()
+        prior_constructor_ids = {
+            int(constructor_id)
+            for constructor_id in last_week_lineup["constructors"]
+        }
 
         for i in d_idx:
-            driver_key = drivers.loc[i, "driver_key"]
-            if driver_key in prior_drivers:
-                prob += t_d[i] == 0 # type: ignore
-            else:
-                prob += t_d[i] == x_d[i] # type: ignore
+            driver_id = int(drivers.loc[i, "driver_id"])
 
-        # Use normalized constructor team_key for matching
-        for j in c_idx:
-            constructor_key = cons.loc[j, "team_key"]
-            if constructor_key in prior_constructors:
-                prob += t_c[j] == 0 # type: ignore
+            if driver_id in prior_driver_ids:
+                prob += t_d[i] == 0  # same driver, no transfer # type: ignore
             else:
-                prob += t_c[j] == x_c[j] # type: ignore
+                prob += t_d[i] == x_d[i]  # selected new driver counts as transfer # type: ignore
+
+        for j in c_idx:
+            constructor_id = int(cons.loc[j, "constructor_id"])
+
+            if constructor_id in prior_constructor_ids:
+                prob += t_c[j] == 0  # same constructor, no transfer # type: ignore
+            else:
+                prob += t_c[j] == x_c[j]  # selected new constructor counts as transfer # type: ignore
 
         total_transfers = (
             lpSum(t_d[i] for i in d_idx) + # type: ignore

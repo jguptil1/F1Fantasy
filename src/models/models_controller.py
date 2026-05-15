@@ -16,8 +16,8 @@ def main():
     print(driver_output["predictions"].head())
 
 
-    constructor_predictions.clear_constructor_prediction_tables()
-    constructor_predictions.build_fact_constructor_predictions()
+    
+    
     constructor_output = constructorModel.run_constructor_model(model_name="v1_constructor", model_version="1", feature_set_version="1", target_variable="fantasy_points", is_production_run=False, run_tuning = False)
     print("-------------")
     print("model results")

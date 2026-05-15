@@ -341,6 +341,27 @@ def save_model_artifacts(best_pipe, best_name, feature_cols, cv_mae):
 
 def save_predictions(output_predictions, model_name, model_version, feature_set_version, target_variable, is_production_run, train_cutoff_race_id):
 
+    print("DEBUG: output_predictions entering save_predictions")
+    print(
+        output_predictions[
+            output_predictions["driver_id"].isin([44, 45, 65, 66])
+        ][[
+            "year",
+            "race_id",
+            "driver_id",
+            "constructor_id",
+            "price",
+            "predicted_points"
+        ]].sort_values("driver_id")
+    )
+
+    print("DEBUG: race_ids entering save_predictions")
+    print(output_predictions[["year", "race_id"]].drop_duplicates())    
+
+
+
+
+
     #PREDICTION RUN ROW APPEND OPERATION
     
     new_prediction_run_id = predictions_controller.get_max_prediction_run_id() + 1
