@@ -58,16 +58,16 @@ def build_pre_race_driver_features():
                 price - prev_price AS price_change_prev_race,
                 (price - prev_price) / NULLIF(prev_price, 0) AS price_change_pct_prev_race,
 
-                AVG(prev_points) OVER (
+                AVG(fantasy_points) OVER (
                     PARTITION BY driver_id
                     ORDER BY date_start
-                    ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
+                    ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING
                 ) AS points_last_5_avg,
                       
-                AVG(prev_points) OVER (
+                AVG(fantasy_points) OVER (
                     PARTITION BY driver_id
                     ORDER BY date_start
-                    ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+                    ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING
                 ) AS points_last_3_avg,
 
                 AVG(qualifying_position) OVER (
@@ -123,21 +123,21 @@ def build_pre_race_driver_features():
             fantasy_points,
             elo_before,
 
-            price_change_prev_race,
-            price_change_pct_prev_race,
-            points_last_5_avg,
-            ppm_last_5,
-            avg_quali_last_5,
-            points_last_3_avg - points_last_5_avg AS momentum,
+            COALESCE(price_change_prev_race, 0) AS price_change_prev_race,
+            COALESCE(price_change_pct_prev_race, 0) AS price_change_pct_prev_race,
+            COALESCE(points_last_5_avg, 0) AS points_last_5_avg,
+            COALESCE(ppm_last_5, 0) AS ppm_last_5,
+            COALESCE(avg_quali_last_5, 20) AS avg_quali_last_5,
 
             price_increase,
             price_decrease,
 
-            teammate_points_last5,
-            points_last_5_avg - teammate_points_last5 AS teammate_delta_last5
+            COALESCE(points_last_3_avg - points_last_5_avg, 0) AS momentum,
+            COALESCE(teammate_points_last5, 0) AS teammate_points_last5,
+            COALESCE(points_last_5_avg - teammate_points_last5, 0) AS teammate_delta_last5
 
         FROM teammate_features
-        ORDER BY race_id;
+        ORDER BY year, race_id, driver_id;
                       
     """)
         

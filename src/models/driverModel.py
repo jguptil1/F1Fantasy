@@ -417,7 +417,7 @@ def run_driver_model(model_name="v1", model_version="1", feature_set_version="1"
 
     X, y, X_train, X_test, y_train, y_test = prepare_model_data(hist_df)
 
-
+    X = X.drop(columns=["avg_quali_last_5"])
 
     preprocess = build_preprocessor(X)
     models = get_models()
