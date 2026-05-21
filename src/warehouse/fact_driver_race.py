@@ -69,7 +69,9 @@ def build_fact_driver_race():
                 plc.status,
                 elo.elo_before,
                 elo.elo_delta,
-                elo.elo_after
+                elo.elo_after,
+                q.qualifying_position,
+                q.qualifying_laps
             FROM stage_driver_points_table pts
             LEFT JOIN stage_driver_price_table p
                 ON pts.year = p.year
@@ -92,6 +94,10 @@ def build_fact_driver_race():
             LEFT JOIN staged_elo_table elo
                 ON r.race_id = elo.race_id
                 AND d.driver_name = elo.driver
+            LEFT JOIN staged_qualifying_results_table q
+                ON r.race_id = q.race_id
+            AND d.driver_id = q.driver_id        
+            
             WHERE r.race_id IS NOT NULL
             ORDER BY race_id
         """)

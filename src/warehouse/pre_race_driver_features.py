@@ -29,7 +29,8 @@ def build_pre_race_driver_features():
                 fdr.constructor_id,
                 fdr.price,
                 fdr.fantasy_points,
-                fdr.elo_before
+                fdr.elo_before,
+                fdr.qualifying_position
             FROM fact_driver_race AS fdr
         ),
 
@@ -67,7 +68,13 @@ def build_pre_race_driver_features():
                     PARTITION BY driver_id
                     ORDER BY date_start
                     ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-                ) AS points_last_3_avg
+                ) AS points_last_3_avg,
+
+                AVG(qualifying_position) OVER (
+                    PARTITION BY driver_id
+                    ORDER BY date_start
+                    ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING
+                ) AS avg_quali_last_5
 
             FROM lagged
         ),
@@ -120,6 +127,7 @@ def build_pre_race_driver_features():
             price_change_pct_prev_race,
             points_last_5_avg,
             ppm_last_5,
+            avg_quali_last_5,
             points_last_3_avg - points_last_5_avg AS momentum,
 
             price_increase,

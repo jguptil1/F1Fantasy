@@ -7,6 +7,7 @@ import placements
 import elo_ingestion
 import budget
 import team_config
+import qualifying
 
 
 #processing speed
@@ -104,9 +105,17 @@ def run_pipeline(plan: dict):
     if plan.get("teamConfiguration") == "build":
         print("BUILDING TEAM CONFIG")
         team_config.team_config_controller()
-    elif plan.get("budget") == "update":
-        print("BUILDING TEAM CONFIG")
+    elif plan.get("teamConfiguration") == "update":
+        print("UPDATING TEAM CONFIG")
         team_config.team_config_controller()
+
+    #qualifying
+    if plan.get("qualifying") == "build":
+        print("BUILDING QUALIFYING")
+        qualifying.quali_results_pipeline(update=False)
+    elif plan.get("qualifying") == "update":
+        print("BUILDING QUALIFYING")
+        qualifying.quali_results_pipeline(update=False)
 
 
 
@@ -129,6 +138,8 @@ def main():
         #"elo": "build", #doesnt matter, will always build
         #"budget": "build",
         #"teamConfiguration": "build"
+        "qualifying": "build" #builds no matter what
+
     }
 
     run_pipeline(plan)

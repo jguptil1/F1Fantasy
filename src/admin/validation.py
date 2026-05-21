@@ -18,6 +18,7 @@ EXPECTED_TABLES = [
     "prediction_run",
     "fact_driver_predictions",
     "fact_constructor_predictions",
+    "staged_qualifying_results_table",
 ]
 
 
@@ -34,6 +35,7 @@ EXPECTED_GRAINS = {
     "prediction_run": ["prediction_run_id"],
     "fact_driver_predictions": ["prediction_run_id", "race_id", "driver_id"],
     "fact_constructor_predictions": ["prediction_run_id", "race_id", "constructor_id"],
+    "staged_qualifying_results_table" : ["race_id", "driver_id"]
 }
 
 
@@ -85,12 +87,41 @@ REQUIRED_COLUMNS = {
         "prediction_run_id", "year", "race_id", "constructor_id",
         "price", "predicted_points"
     ],
+
+
+    "staged_qualifying_results_table": [
+        "year",
+        "race_id",
+        "meeting_key",
+        "session_key",
+        "driver_number",
+        "driver_name",
+        "driver_id",
+        "qualifying_position",
+        "qualifying_laps",
+        "q1_time",
+        "q2_time",
+        "q3_time",
+        "dnf",
+        "dns",
+        "dsq",
+    ]
 }
 
 
 REQUIRED_NOT_NULL_COLUMNS = {
     table: cols for table, cols in REQUIRED_COLUMNS.items()
 }
+
+REQUIRED_NOT_NULL_COLUMNS["staged_qualifying_results_table"] = [
+    "year",
+    "race_id",
+    "meeting_key",
+    "session_key",
+    "driver_number",
+    "driver_name",
+    "driver_id",
+]
 
 
 def connect_db(database_path: Path = DATABASE_PATH):
@@ -204,6 +235,90 @@ def validate_table_not_empty(con, table_name: str):
     print(f"PASS: {table_name} is not empty ({row_count} rows)")
 
 
+
+def validate_qualifying_positions_reasonable(con):
+    bad_rows = con.execute("""
+        SELECT *
+        FROM staged_qualifying_results_table
+        WHERE qualifying_position IS NOT NULL
+          AND (qualifying_position < 1 OR qualifying_position > 25)
+    """).df()
+
+    if not bad_rows.empty:
+        print(bad_rows)
+        raise ValueError("staged_qualifying_results_table has unreasonable qualifying positions")
+
+    print("PASS: qualifying positions are reasonable")
+
+
+def validate_qualifying_race_coverage(con):
+    coverage = con.execute("""
+        SELECT
+            year,
+            race_id,
+            COUNT(*) AS rows,
+            COUNT(DISTINCT driver_id) AS drivers
+        FROM staged_qualifying_results_table
+        GROUP BY year, race_id
+        HAVING COUNT(DISTINCT driver_id) < 18
+    """).df()
+
+    if not coverage.empty:
+        print(coverage)
+        raise ValueError("Some qualifying races have suspiciously low driver coverage")
+
+    print("PASS: qualifying race coverage looks reasonable")
+
+
+def validate_qualifying_driver_resolution(con):
+    unresolved = con.execute("""
+        SELECT *
+        FROM staged_qualifying_results_table
+        WHERE race_id IS NULL
+           OR driver_id IS NULL
+           OR driver_name IS NULL
+        LIMIT 25
+    """).df()
+
+    if not unresolved.empty:
+        print(unresolved)
+        raise ValueError("Qualifying staging has unresolved race_id/driver_id/driver_name rows")
+
+    print("PASS: qualifying driver/race resolution succeeded")
+
+
+def validate_fdr_qualifying_columns(con):
+    columns = set(get_column_names(con, "fact_driver_race"))
+
+    required = {"qualifying_position", "qualifying_laps"}
+    missing = required - columns
+
+    if missing:
+        raise ValueError(f"fact_driver_race missing qualifying columns: {missing}")
+
+    print("PASS: fact_driver_race has qualifying columns")
+
+
+def validate_fdr_qualifying_join_coverage(con):
+    coverage = con.execute("""
+        SELECT
+            fdr.year,
+            fdr.race_id,
+            COUNT(*) AS fdr_rows,
+            COUNT(fdr.qualifying_position) AS rows_with_quali
+        FROM fact_driver_race fdr
+        GROUP BY fdr.year, fdr.race_id
+        HAVING COUNT(fdr.qualifying_position) = 0
+        ORDER BY fdr.year, fdr.race_id
+    """).df()
+
+    if not coverage.empty:
+        print(coverage)
+        raise ValueError("Some fact_driver_race races have zero qualifying coverage")
+
+    print("PASS: fact_driver_race qualifying coverage exists by race")
+
+
 def validate_phase_1_mvp(database_path: Path = DATABASE_PATH):
     print("Running Phase 1 database validation checks...")
     print("-" * 60)
@@ -235,7 +350,16 @@ def validate_phase_1_mvp(database_path: Path = DATABASE_PATH):
                     EXPECTED_GRAINS[table_name]
                 )
 
+
             print("-" * 60)
+    
+        validate_qualifying_driver_resolution(con)
+        validate_qualifying_positions_reasonable(con)
+        validate_qualifying_race_coverage(con)
+
+        # Only run these after you add quali columns to FDR
+        validate_fdr_qualifying_columns(con)
+        validate_fdr_qualifying_join_coverage(con)
 
     print("All Phase 1 validation checks passed.")
 

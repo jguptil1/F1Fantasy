@@ -49,6 +49,8 @@ def build_current_race_driver_features(year, race_num):
                 ) = 1
             )
 
+
+
             SELECT
                 tr.race_id,
                 tr.date_start,
@@ -70,6 +72,7 @@ def build_current_race_driver_features(year, race_num):
                 h.points_last_5_avg,
                 h.ppm_last_5,
                 h.momentum,
+                h.avg_quali_last_5,
                 h.teammate_points_last5,
                 h.teammate_delta_last5,
 
@@ -132,6 +135,7 @@ def validate_current_race_driver_features(year, race_num):
         "points_last_5_avg",
         "ppm_last_5",
         "momentum",
+        'avg_quali_last_5',
     ]
 
     null_counts = df[critical_cols].isna().sum()
