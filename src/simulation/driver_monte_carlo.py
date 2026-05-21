@@ -202,8 +202,6 @@ def main():
         n_sims=10000
     )
 
-    print(driver_simulations.head())
-    print(driver_simulations.shape)
 
     driver_summary = summarize_driver_simulations(driver_simulations)
 
@@ -213,10 +211,13 @@ def main():
     driver_summary["risk_range"] = driver_summary["p90"] - driver_summary["p10"]
     driver_summary["downside_gap"] = driver_summary["mean_sim_points"] - driver_summary["p10"]
 
-    driver_summary.reset_index(drop=True)
+    driver_summary = driver_summary.reset_index(drop=True)
     driver_summary.to_csv("driver_risk_summary_5_15.csv")
+    print("Driver Summary")
 
+    print(driver_summary)
 
+    print("Lineup Simulation")
     selected_driver_ids = [22, 20, 35, 44, 65]
 
     lineup_sim = simulate_lineup(
@@ -225,7 +226,9 @@ def main():
     )
 
     lineup_summary = summarize_lineup(lineup_sim)
-    print(lineup_summary)   
+    lineup_summary_df = pd.DataFrame([lineup_summary])
+    print("Lineup Simulation Summary")
+    print(lineup_summary_df.round(2).to_string(index=False))
 
 
 if __name__ == "__main__":

@@ -179,13 +179,13 @@ def clean_raw_sessions(df):
 
 
     #filter cols
-    cols_to_keep = ["session_key", "session_type", "session_name", "date_start", "date_end", "meeting_key", "location" "year"]
+    cols_to_keep = ["session_key", "session_type", "session_name", "date_start", "date_end", "meeting_key", "location", "year"]
     df = df[[col for col in cols_to_keep if col in df.columns]]
 
 
     #data type conversions
     df["date_start"] = pd.to_datetime(df["date_start"], utc=True, errors="coerce")
-    df["date_end"] = pd.to_datetime(df["date_start"], utc=True, errors="coerce")  
+    df["date_end"] = pd.to_datetime(df["date_end"], utc=True, errors="coerce") 
 
     return df
 
