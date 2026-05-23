@@ -1,6 +1,6 @@
 {
   "model_name": "LightGBM",
-  "cv_mae": 10.303733709665938,
+  "cv_mae": 10.264884210528525,
   "features": [
     "year",
     "race_id",
@@ -17,6 +17,8 @@
     "price_change_pct_prev_race",
     "points_last_5_avg",
     "ppm_last_5",
+    "avg_quali_last_5",
+    "quali_vs_teammate_last_5",
     "price_increase",
     "price_decrease",
     "momentum",

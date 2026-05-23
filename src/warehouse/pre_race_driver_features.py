@@ -50,6 +50,33 @@ def build_pre_race_driver_features():
 
             FROM base
         ),
+                    
+        quali_teammate AS (
+            SELECT
+                *,
+
+                AVG(qualifying_position) OVER (
+                    PARTITION BY year, race_id, constructor_id
+                ) AS constructor_avg_quali_position,
+
+                CASE
+                    WHEN COUNT(qualifying_position) OVER (
+                        PARTITION BY year, race_id, constructor_id
+                    ) = 2
+
+                    THEN qualifying_position
+                        - (
+                            SUM(qualifying_position) OVER (
+                                PARTITION BY year, race_id, constructor_id
+                            ) - qualifying_position
+                        )
+
+                    ELSE NULL
+
+                END AS quali_vs_teammate
+
+            FROM lagged
+        ),
 
         rolling AS (
             SELECT
@@ -74,9 +101,15 @@ def build_pre_race_driver_features():
                     PARTITION BY driver_id
                     ORDER BY date_start
                     ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING
-                ) AS avg_quali_last_5
+                ) AS avg_quali_last_5,
+                    
+                AVG(quali_vs_teammate) OVER (
+                    PARTITION BY driver_id
+                    ORDER BY date_start
+                    ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING
+                ) AS quali_vs_teammate_last_5
 
-            FROM lagged
+            FROM quali_teammate
         ),
 
         feature_calc AS (
@@ -128,6 +161,7 @@ def build_pre_race_driver_features():
             COALESCE(points_last_5_avg, 0) AS points_last_5_avg,
             COALESCE(ppm_last_5, 0) AS ppm_last_5,
             COALESCE(avg_quali_last_5, 20) AS avg_quali_last_5,
+            COALESCE(quali_vs_teammate_last_5, 0) AS quali_vs_teammate_last_5,
 
             price_increase,
             price_decrease,

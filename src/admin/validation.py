@@ -56,7 +56,7 @@ REQUIRED_COLUMNS = {
 
     "pre_race_driver_features": [
         "race_id", "year", "driver_id", "constructor_id",
-        "price", "elo_before"
+        "price", "elo_before", "avg_quali_last_5", "quali_vs_teammate_last_5"
     ],
 
     "pre_race_constructor_features": [
@@ -65,7 +65,7 @@ REQUIRED_COLUMNS = {
 
     "current_race_driver_features": [
         "race_id", "year", "driver_id", "constructor_id",
-        "price", "elo_before"
+        "price", "elo_before", "avg_quali_last_5", "quali_vs_teammate_last_5",
     ],
 
     "current_race_constructor_features": [
@@ -319,6 +319,36 @@ def validate_fdr_qualifying_join_coverage(con):
     print("PASS: fact_driver_race qualifying coverage exists by race")
 
 
+def validate_driver_quali_features(con):
+    bad_avg_quali = con.execute("""
+        SELECT *
+        FROM pre_race_driver_features
+        WHERE avg_quali_last_5 IS NULL
+           OR avg_quali_last_5 < 1
+           OR avg_quali_last_5 > 25
+        LIMIT 25
+    """).df()
+
+    if not bad_avg_quali.empty:
+        print(bad_avg_quali)
+        raise ValueError("Invalid avg_quali_last_5 values found")
+
+    bad_teammate_delta = con.execute("""
+        SELECT *
+        FROM pre_race_driver_features
+        WHERE quali_vs_teammate_last_5 IS NULL
+           OR quali_vs_teammate_last_5 < -25
+           OR quali_vs_teammate_last_5 > 25
+        LIMIT 25
+    """).df()
+
+    if not bad_teammate_delta.empty:
+        print(bad_teammate_delta)
+        raise ValueError("Invalid quali_vs_teammate_last_5 values found")
+
+    print("PASS: qualifying driver features are valid")
+
+
 def validate_phase_1_mvp(database_path: Path = DATABASE_PATH):
     print("Running Phase 1 database validation checks...")
     print("-" * 60)
@@ -360,6 +390,8 @@ def validate_phase_1_mvp(database_path: Path = DATABASE_PATH):
         # Only run these after you add quali columns to FDR
         validate_fdr_qualifying_columns(con)
         validate_fdr_qualifying_join_coverage(con)
+
+        validate_driver_quali_features(con )
 
     print("All Phase 1 validation checks passed.")
 

@@ -218,7 +218,7 @@ def main():
     print(driver_summary)
 
     print("Lineup Simulation")
-    selected_driver_ids = [22, 20, 35, 44, 65]
+    selected_driver_ids = [22, 48, 26, 35, 39]
 
     lineup_sim = simulate_lineup(
         driver_simulations=driver_simulations,

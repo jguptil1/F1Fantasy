@@ -150,10 +150,10 @@ def build_preprocessor(X):
 
 def get_models():
     models = {
-        "Linear": LinearRegression(),
-        "Ridge": Ridge(alpha=1.0, random_state=201),
-        "Lasso": Lasso(alpha=.01, max_iter=20000, random_state=201),
-        "ElasticNet": ElasticNet(alpha=0.01, l1_ratio=0.5, max_iter=20000, random_state=201),
+        #"Linear": LinearRegression(),
+        #"Ridge": Ridge(alpha=1.0, random_state=201),
+        #"Lasso": Lasso(alpha=.01, max_iter=20000, random_state=201),
+        #"ElasticNet": ElasticNet(alpha=0.01, l1_ratio=0.5, max_iter=20000, random_state=201),
         "RandomForest": RandomForestRegressor(n_estimators=500, random_state=201, min_samples_leaf=5),
         "LightGBM": LGBMRegressor(n_estimators = 150, learning_rate=0.03, num_leaves=5, min_child_samples=20, random_state=201, verbosity=-1)
     }
@@ -417,7 +417,7 @@ def run_driver_model(model_name="v1", model_version="1", feature_set_version="1"
 
     X, y, X_train, X_test, y_train, y_test = prepare_model_data(hist_df)
 
-    X = X.drop(columns=["avg_quali_last_5"])
+   
 
     preprocess = build_preprocessor(X)
     models = get_models()
@@ -439,6 +439,7 @@ def run_driver_model(model_name="v1", model_version="1", feature_set_version="1"
 
         final_model_name = tuned_best_name
         final_pipe = tuned_best_pipe
+
 
     # refit on all historical data before predicting
     final_pipe.fit(X, y)
@@ -477,6 +478,11 @@ def run_driver_model(model_name="v1", model_version="1", feature_set_version="1"
         "coef_tables": coef_tables,
         "predictions": output_predictions,
     }
+
+
+
+
+
 
 
 ########################Supplementary Functions##################################
@@ -538,33 +544,57 @@ def create_correlation_matrix_graph(corr_matrix):
     # Display the plot
     plt.show()
 
-def coef_analysis(models, X_train, y_train):
+def coef_analysis(models, preprocess, X_train, y_train):
 
-    coef_tables = {}
+    feature_tables = {}
 
     for name, model in models.items():
-        pipe = Pipeline([("preprocess", preprocess), ("model", model)]) #type: ignore
+
+        pipe = Pipeline([
+            ("preprocess", preprocess),
+            ("model", model)
+        ])
+
         pipe.fit(X_train, y_train)
 
         mdl = pipe.named_steps["model"]
 
+        feature_names = (
+            pipe.named_steps["preprocess"]
+            .get_feature_names_out()
+        )
+
+        # Linear models
         if hasattr(mdl, "coef_"):
-            coefs = mdl.coef_.ravel()
-            feature_names = pipe.named_steps["preprocess"].get_feature_names_out()
 
-            coef_tables[name] = (
-                pd.DataFrame({"feature": feature_names, "coef": coefs})
-                .assign(abs_coef=lambda d: d["coef"].abs())
-                .sort_values("abs_coef", ascending=False)
+            coefs = np.ravel(mdl.coef_)
+
+            feature_tables[name] = (
+                pd.DataFrame({
+                    "feature": feature_names,
+                    "value": coefs
+                })
+                .assign(abs_value=lambda d: d["value"].abs())
+                .sort_values("abs_value", ascending=False)
             )
+
+        # Tree models
+        elif hasattr(mdl, "feature_importances_"):
+
+            importances = mdl.feature_importances_
+
+            feature_tables[name] = (
+                pd.DataFrame({
+                    "feature": feature_names,
+                    "value": importances
+                })
+                .sort_values("value", ascending=False)
+            )
+
         else:
-            print(f"{name}: no coef_ (use feature_importances_ or permutation importance)")
+            print(f"{name}: no coefficients or feature importance")
 
-
-    
-
-    #coef_tables["ElasticNet"][coef_tables["ElasticNet"]["feature"].str.contains("elo", case=False)]
-    return coef_tables
+    return feature_tables
 
 
 

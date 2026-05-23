@@ -73,6 +73,7 @@ def build_current_race_driver_features(year, race_num):
                 h.ppm_last_5,
                 h.momentum,
                 h.avg_quali_last_5,
+                h.quali_vs_teammate_last_5,
                 h.teammate_points_last5,
                 h.teammate_delta_last5,
 
