@@ -348,6 +348,21 @@ def validate_driver_quali_features(con):
 
     print("PASS: qualifying driver features are valid")
 
+def validate_current_week_quali_features(con):
+    bad = con.execute("""
+        SELECT *
+        FROM current_race_driver_features
+        WHERE avg_quali_last_5 IS NULL
+           OR quali_vs_teammate_last_5 IS NULL
+        LIMIT 25
+    """).df()
+
+    if not bad.empty:
+        print(bad)
+        raise ValueError("Current week qualifying features have nulls")
+
+    print("PASS: current week qualifying features are populated")
+
 
 def validate_phase_1_mvp(database_path: Path = DATABASE_PATH):
     print("Running Phase 1 database validation checks...")
@@ -391,7 +406,8 @@ def validate_phase_1_mvp(database_path: Path = DATABASE_PATH):
         validate_fdr_qualifying_columns(con)
         validate_fdr_qualifying_join_coverage(con)
 
-        validate_driver_quali_features(con )
+        validate_driver_quali_features(con)
+        validate_current_week_quali_features(con)
 
     print("All Phase 1 validation checks passed.")
 

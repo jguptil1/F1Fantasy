@@ -43,4 +43,4 @@ def build_warehouse(year, race_num):
 
 
 if __name__ == "__main__":
-    build_warehouse(2026, 7)
+    build_warehouse(2026, 8)

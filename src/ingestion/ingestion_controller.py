@@ -129,16 +129,16 @@ def main():
     print(f"Buid started at: {start_readable}")
 
     plan = {
-        #"meetings": "build", #this update includes updating the dim_race table #FIXME: update does not work
-        #"sessions":"build",
-        #"drivers": "build",
-        #"fantasy_tables": "build", #default build
-        #"constructors": "build",
-        #"placements": "build",
-        #"elo": "build", #doesnt matter, will always build
-        #"budget": "build",
-        #"teamConfiguration": "build"
-        "qualifying": "build" #builds no matter what
+        # "meetings": "build", #this update includes updating the dim_race table #FIXME: update does not work
+        # "sessions":"update",
+        # "drivers": "update",
+        # "fantasy_tables": "build", #default build
+        # "constructors": "build",
+        # "placements": "update",
+        "elo": "build", #doesnt matter, will always build
+        # "budget": "build", #doesnt matter
+        # "teamConfiguration": "build", #doesnt matter
+        # "qualifying": "build" #doesnt matter
 
     }
 
