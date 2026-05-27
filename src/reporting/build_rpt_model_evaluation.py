@@ -48,7 +48,11 @@ def build_rpt_model_evaluation():
 
                     pf.is_production_run,
 
-                    mr.model_type,
+                    CASE
+                        WHEN mr.model_type IN ('Random Forest', 'RandomForest')
+                            THEN 'RandomForest'
+                        ELSE mr.model_type
+                    END AS model_type,
 
                     mr.cv_mae,
                     mr.cv_mae_std,
