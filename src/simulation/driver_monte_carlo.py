@@ -3,22 +3,6 @@ import pandas as pd
 import numpy as np
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
 
-def load_driver_residual_samples():
-    with duckdb.connect(DATABASE_PATH, read_only=True) as con:
-        residuals = con.execute("""
-            SELECT
-                prediction_bucket,
-                residual
-            FROM driver_prediction_residuals
-            WHERE residual IS NOT NULL
-        """).df()
-
-    bucket_residuals = {
-        bucket: group["residual"].to_numpy()
-        for bucket, group in residuals.groupby("prediction_bucket")
-    }
-
-    return bucket_residuals
 
 def simulate_driver_points(current_preds, bucket_residuals, n_sims=10000, random_seed=42):
     rng = np.random.default_rng(random_seed)
@@ -79,8 +63,10 @@ def summarize_driver_simulations(driver_simulations):
         .reset_index()
     )
 
+    summary = enrich_driver_sim_summary(summary).sort_values(["predicted_points", 'prediction_bucket', "constructor_name"], ascending=[False, False, True])
     return summary
 
+#helper function for more readible information
 def enrich_driver_sim_summary(driver_summary):
 
     with duckdb.connect(DATABASE_PATH, read_only=True) as con:
@@ -128,6 +114,11 @@ def enrich_driver_sim_summary(driver_summary):
 
     return enriched
 
+
+
+
+### lineup functions
+
 def simulate_lineup(driver_simulations, selected_driver_ids):
     lineup_sim = (
         driver_simulations[
@@ -156,55 +147,3 @@ def summarize_lineup(lineup_sim):
     }
 
     return summary
-
-def main():
-    current_preds = load_current_driver_predictions(
-            race_id_to_sim=77,
-            prediction_run_id=11
-        )
-    print(current_preds)
-
-
-    bucket_residuals = load_driver_residual_samples()
-
-    for bucket, residual_values in bucket_residuals.items():
-        print(bucket, len(residual_values), residual_values[:5])
-
-
-    driver_simulations = simulate_driver_points(
-        current_preds=current_preds,
-        bucket_residuals=bucket_residuals,
-        n_sims=10000
-    )
-
-
-    driver_summary = summarize_driver_simulations(driver_simulations)
-
-    driver_summary = enrich_driver_sim_summary(driver_summary).sort_values(["predicted_points", 'prediction_bucket', "constructor_name"], ascending=[False, False, True])
-    driver_summary["p90_per_price"] = driver_summary["p90"] / driver_summary["price"]
-    driver_summary["mean_per_price"] = driver_summary["mean_sim_points"] / driver_summary["price"]
-    driver_summary["risk_range"] = driver_summary["p90"] - driver_summary["p10"]
-    driver_summary["downside_gap"] = driver_summary["mean_sim_points"] - driver_summary["p10"]
-
-    driver_summary = driver_summary.reset_index(drop=True)
-    driver_summary.to_csv("driver_risk_summary_5_15.csv")
-    print("Driver Summary")
-
-    print(driver_summary)
-
-    print("Lineup Simulation")
-    selected_driver_ids = [22, 48, 26, 35, 39]
-
-    lineup_sim = simulate_lineup(
-        driver_simulations=driver_simulations,
-        selected_driver_ids=selected_driver_ids
-    )
-
-    lineup_summary = summarize_lineup(lineup_sim)
-    lineup_summary_df = pd.DataFrame([lineup_summary])
-    print("Lineup Simulation Summary")
-    print(lineup_summary_df.round(2).to_string(index=False))
-
-
-if __name__ == "__main__":
-    main()
