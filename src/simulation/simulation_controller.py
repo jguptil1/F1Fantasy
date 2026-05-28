@@ -2,15 +2,19 @@ import duckdb
 import pandas as pd
 import numpy as np
 #simulator modeule
-import driver_monte_carlo
+from src.simulation import driver_monte_carlo
 #optimizer engine module
-from src.optimizer.pre_race_weekend_optimizer import pre_race_weekend_optimizer_controller
+from src.optimizer.pre_race_weekend_optimizer import run_optimizer_profile
 from src.optimizer.optimization_tables import optimizer_tables_controller
+
 
 
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
 RACE_ID = 77
-PREDICTION_RUN_ID = 11
+DRIVER_PREDICTION_RUN_ID = 25 
+CONSTRUCTOR_PREDICTION_RUN_ID = 26
+
+
 
 def load_current_driver_predictions(race_id_to_sim, prediction_run_id):
 
@@ -50,7 +54,7 @@ def load_driver_residual_samples():
     return bucket_residuals
 
 def run_driver_simulator():
-    current_preds = load_current_driver_predictions(RACE_ID, PREDICTION_RUN_ID)
+    current_preds = load_current_driver_predictions(RACE_ID, DRIVER_PREDICTION_RUN_ID)
     print(current_preds)
 
     print("-------------------Loading Bucket Residuals---------------------")
@@ -78,12 +82,10 @@ def run_driver_simulator():
 #Lineup will run several risk and optimization profiles 
 #Profiles
 
-# Optimization #1: max_predicted_points
-
 
 
 #helper that will verify that there are predictions for the given race_id and the prediction_run_id
-def verify_race_id_pred_run_id(race_id = RACE_ID, prediction_run_id = PREDICTION_RUN_ID) -> bool: 
+def verify_race_id_pred_run_id(race_id = RACE_ID, prediction_run_id = DRIVER_PREDICTION_RUN_ID) -> bool: 
     with duckdb.connect(DATABASE_PATH, read_only=True) as con:
         df = con.execute(f"""
                     SELECT *
@@ -132,12 +134,33 @@ def verify_run_exists(
 
     return None
 
+# Optimization #1: max_predicted_points
+
+def get_optimized_driver_lineup(optimization_run_id):
+    with duckdb.connect(DATABASE_PATH, read_only=True) as con:
+        lineup_df = con.execute("""
+            SELECT driver_id
+            FROM optimizer_selection
+            WHERE optimizer_run_id = ?
+              AND asset_type = 'driver'
+            ORDER BY slot_num
+        """, [optimization_run_id]).df()
+
+    return lineup_df["driver_id"].tolist()
 
 
 #helper to get the most recent optimized team that contains that prediction_run and race_id
-def get_max_predicted_points():
+def get_max_predicted_points_optimization_id():
+
+
+    """
+    This function will return the team that has the optimized max points, not considering constructor contraints.
+    This fucntion returns the driver_ids from that lineup. 
+    
+    """
 
     try:
+        print("Verifying that race and prediction exist")
         verify_race_id_pred_run_id()
     except ValueError as e:
         print(f"Error encountered: {e}")
@@ -152,9 +175,11 @@ def get_max_predicted_points():
         "min_drivers_per_selected_constructor": 0
     }
 
+    print("Verifying if there is a run that exists")
+
     existing_run_id = verify_run_exists(
         settings=opt_settings,
-        prediction_run_id=PREDICTION_RUN_ID,
+        prediction_run_id=DRIVER_PREDICTION_RUN_ID,
         profile_source=profile_source,
         profile_strategy=profile_strategy,
         optimization_target=optimization_target
@@ -164,8 +189,10 @@ def get_max_predicted_points():
         print(f"Existing optimizer run found: {existing_run_id}")
         return existing_run_id
 
-    drivers_selected_df, constructors_selected_df, summary_dict = (
-        pre_race_weekend_optimizer_controller()
+    drivers_selected_df, constructors_selected_df, summary_dict = run_optimizer_profile(
+        race_id=RACE_ID,
+        driver_prediction_run_id=DRIVER_PREDICTION_RUN_ID,
+        constructor_prediction_run_id=CONSTRUCTOR_PREDICTION_RUN_ID,
     )
 
     optimizer_run_id = optimizer_tables_controller(
@@ -189,12 +216,6 @@ def get_max_predicted_points():
 # Optimization #3: 1_con_driver_required
 
 
-def get_linup_profiles():
-
-    optimized_team = get_max_predicted_points()
-
-
-
 #running a single lineup
 def run_lineup(driver_simulations, driver_ids):
 
@@ -204,6 +225,26 @@ def run_lineup(driver_simulations, driver_ids):
     return lineup_summary_df
 
 
+#this gets all of the lineups
+def get_lineup_profile():
+
+    potential_lineups = {}
+
+
+    max_predicted_points_team_id = get_max_predicted_points_optimization_id()
+
+
+    lineup_1 = get_optimized_driver_lineup(optimization_run_id=max_predicted_points_team_id)
+    print(f"Max predicted points lineup: {lineup_1}")
+
+    run_lineup()
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
 
@@ -211,8 +252,8 @@ if __name__ == "__main__":
     driver_field_summary, driver_simulations = run_driver_simulator()
 
 
+    get_lineup_profiles()
 
 
-    #FIXME: need to figure out how i am going to be getting driver_ids
     #lineup_summary_df = run_lineup(driver_simulations=driver_simulations, driver_ids=driver_ids)
     
