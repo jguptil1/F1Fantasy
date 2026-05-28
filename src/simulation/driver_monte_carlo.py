@@ -3,28 +3,6 @@ import pandas as pd
 import numpy as np
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
 
-
-
-def load_current_driver_predictions(race_id_to_sim, prediction_run_id):
-
-    with duckdb.connect(DATABASE_PATH, read_only=True) as con:
-        current_preds = con.execute(f"""
-            SELECT
-                dp.race_id,
-                dp.driver_id,
-                dp.constructor_id,
-                dp.price,
-                dp.predicted_points,
-                CASE
-                    WHEN dp.predicted_points < 20 THEN '00_20'
-                    ELSE '20_plus'
-                END AS prediction_bucket
-            FROM fact_driver_predictions dp
-            WHERE dp.race_id = ?
-            AND dp.prediction_run_id = ?;
-        """, [race_id_to_sim, prediction_run_id]).df()
-        return current_preds
-
 def load_driver_residual_samples():
     with duckdb.connect(DATABASE_PATH, read_only=True) as con:
         residuals = con.execute("""
@@ -150,7 +128,6 @@ def enrich_driver_sim_summary(driver_summary):
 
     return enriched
 
-
 def simulate_lineup(driver_simulations, selected_driver_ids):
     lineup_sim = (
         driver_simulations[
@@ -164,7 +141,6 @@ def simulate_lineup(driver_simulations, selected_driver_ids):
     )
 
     return lineup_sim
-
 
 def summarize_lineup(lineup_sim):
     summary = {
@@ -180,7 +156,6 @@ def summarize_lineup(lineup_sim):
     }
 
     return summary
-
 
 def main():
     current_preds = load_current_driver_predictions(
