@@ -135,9 +135,9 @@ def main():
         # "fantasy_tables": "build", #default build
         # "constructors": "build",
         # "placements": "update",
-        "elo": "build", #doesnt matter, will always build
-        # "budget": "build", #doesnt matter
-        # "teamConfiguration": "build", #doesnt matter
+        #"elo": "build", #doesnt matter, will always build
+         "budget": "build", #doesnt matter
+        "teamConfiguration": "build", #doesnt matter
         # "qualifying": "build" #doesnt matter
 
     }
