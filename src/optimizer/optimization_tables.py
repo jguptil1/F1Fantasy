@@ -19,6 +19,13 @@ def build_optimizer_run():
 
             budget DOUBLE,
             points_col VARCHAR,
+                    
+            profile_source VARCHAR, 
+            profile_strategy VARCHAR,
+            optimization_target VARCHAR,
+
+            require_driver_from_each_constructor BOOLEAN,
+            min_drivers_per_selected_constructor INTEGER,
 
             free_transfers_avail INTEGER,
             total_transfers INTEGER,
@@ -86,8 +93,16 @@ def append_optimizer_run(
     constructors_selected,
     summary,
     fantasy_team_name,
-    production_run
+    production_run,
+
+    profile_source,
+    profile_strategy,
+    optimization_target,
+
+    require_driver_from_each_constructor,
+    min_drivers_per_selected_constructor
 ):
+    
     optimizer_run_id = get_max_optimization_run() + 1
     created_at = datetime.datetime.now()
 
@@ -110,6 +125,16 @@ def append_optimizer_run(
 
         "budget": float(summary["budget"]),
         "points_col": summary["points_column_used"],
+
+        "profile_source": profile_source,
+        "profile_strategy": profile_strategy,
+        "optimization_target": optimization_target,
+
+        "require_driver_from_each_constructor": 
+            bool(require_driver_from_each_constructor),
+
+        "min_drivers_per_selected_constructor":
+            int(min_drivers_per_selected_constructor),
 
         "free_transfers_avail": int(summary.get("free_transfers_avail", 0)),
         "total_transfers": int(summary.get("total_transfers", 0)),
@@ -242,7 +267,14 @@ def optimizer_tables_controller(
     constructors_selected_df,
     summary_dict,
     fantasy_team_name,
-    is_production_run
+    is_production_run,
+
+    profile_source,
+    profile_strategy,
+    optimization_target, 
+
+    require_drivers_from_each_constructor,
+    min_drivers_per_selected_constructor
 ): 
     
     #init build
@@ -256,7 +288,12 @@ def optimizer_tables_controller(
         constructors_selected_df,
         summary_dict,
         fantasy_team_name,
-        is_production_run
+        is_production_run,
+        profile_source,
+        profile_strategy,
+        optimization_target,
+        require_drivers_from_each_constructor,
+        min_drivers_per_selected_constructor
     )
 
     append_optimizer_selection(
