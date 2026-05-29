@@ -302,3 +302,5 @@ def optimizer_tables_controller(
         constructors_selected_df,
         summary_dict
     )
+
+    return optimizer_run_id

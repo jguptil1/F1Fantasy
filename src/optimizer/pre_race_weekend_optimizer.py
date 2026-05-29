@@ -174,6 +174,8 @@ def run_optimizer_profile(
         )
     )
 
+    print(summary_dict["status"])
+
     return drivers_selected_df, constructors_selected_df, summary_dict
 
 
