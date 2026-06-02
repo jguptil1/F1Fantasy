@@ -137,7 +137,7 @@ def main():
         # "placements": "update",
         #"elo": "build", #doesnt matter, will always build
         # "budget": "build", #doesnt matter
-        #"teamConfiguration": "build", #doesnt matter
+        "teamConfiguration": "build", #doesnt matter
         # "qualifying": "build" #doesnt matter
 
     }

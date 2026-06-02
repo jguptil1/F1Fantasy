@@ -12,9 +12,9 @@ from src.simulation.simulation_tables import simulation_tables_controller
 
 
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
-RACE_ID = 77
-DRIVER_PREDICTION_RUN_ID = 25 
-CONSTRUCTOR_PREDICTION_RUN_ID = 26
+RACE_ID = 78
+DRIVER_PREDICTION_RUN_ID = 29 
+CONSTRUCTOR_PREDICTION_RUN_ID = 30
 
 ################################Simulations#############################################
 
@@ -177,9 +177,9 @@ def get_last_race_lineup(race_id, fantasy_team_name="Guppies"):
         team_config = con.execute("""
             SELECT *
             FROM fact_team_config
-            WHERE race < ?
+            WHERE race_id < ?
               AND fantasy_team_name = ?
-            ORDER BY race DESC
+            ORDER BY race_id DESC
             LIMIT 1
         """, [race_id, fantasy_team_name]).df()
 
@@ -312,7 +312,7 @@ def prof_double_stack_constructor():
 #######BENCHMARK PROFILE##########
 def prof_get_prior_week_team():
     last_week_lineup = get_last_race_lineup(
-        race_id=RACE_ID - 1,
+        race_id=RACE_ID,
         fantasy_team_name="Guppies"
     )
 
