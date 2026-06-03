@@ -115,8 +115,6 @@ def enrich_driver_sim_summary(driver_summary):
     return enriched
 
 
-
-
 ### lineup functions
 
 def simulate_lineup(driver_simulations, selected_driver_ids):
