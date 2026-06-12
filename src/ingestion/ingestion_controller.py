@@ -133,11 +133,11 @@ def main():
         # "sessions":"update",
         # "drivers": "update",
         # "fantasy_tables": "build", #default build
-        # "constructors": "build",
-        # "placements": "update",
-        #"elo": "build", #doesnt matter, will always build
+        # "constructors": "update", #should update after each
+        # "placements": "update", #update or will take forever
+        "elo": "build", #doesnt matter, will always build
         # "budget": "build", #doesnt matter
-        "teamConfiguration": "build", #doesnt matter
+        # "teamConfiguration": "build", #doesnt matter
         # "qualifying": "build" #doesnt matter
 
     }
@@ -148,6 +148,7 @@ def main():
     end_readable = datetime.now()
 
     print(f"Process ended at: {end_readable}")
+
 
     runtime = end_time - start_time
 
