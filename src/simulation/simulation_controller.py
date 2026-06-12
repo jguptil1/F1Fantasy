@@ -12,9 +12,9 @@ from src.simulation.simulation_tables import simulation_tables_controller
 
 
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
-RACE_ID = 78
-DRIVER_PREDICTION_RUN_ID = 29 
-CONSTRUCTOR_PREDICTION_RUN_ID = 30
+RACE_ID = 79
+DRIVER_PREDICTION_RUN_ID = 31 
+CONSTRUCTOR_PREDICTION_RUN_ID = 32
 
 ################################Simulations#############################################
 
@@ -308,7 +308,6 @@ def prof_double_stack_constructor():
         }
     )
 
-
 #######BENCHMARK PROFILE##########
 def prof_get_prior_week_team():
     last_week_lineup = get_last_race_lineup(
@@ -322,7 +321,6 @@ def prof_get_prior_week_team():
         "optimizer_run_id": None,
         "driver_ids": list(last_week_lineup["drivers"]),
     }
-
 
 ############PROFILE REGISTRY###########
 def get_profiles():
