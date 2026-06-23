@@ -483,8 +483,6 @@ def run_driver_model(model_name="v1", model_version="1", feature_set_version="1"
 
 
 
-
-
 ########################Supplementary Functions##################################
 
 def naive_baseline_time_aware(hist_df, n_test_races=4):
