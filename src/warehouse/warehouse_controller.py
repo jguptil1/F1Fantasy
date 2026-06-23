@@ -43,5 +43,5 @@ def build_warehouse(year, race_num):
 
 
 if __name__ == "__main__":
-    build_warehouse(2026, 8) 
+    build_warehouse(2026, 10) 
     #second param is the race to predict
