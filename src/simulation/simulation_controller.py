@@ -12,9 +12,9 @@ from src.simulation.simulation_tables import simulation_tables_controller
 
 
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
-RACE_ID = 79
-DRIVER_PREDICTION_RUN_ID = 31 
-CONSTRUCTOR_PREDICTION_RUN_ID = 32
+RACE_ID = 80
+DRIVER_PREDICTION_RUN_ID = 33
+CONSTRUCTOR_PREDICTION_RUN_ID = 34
 
 ################################Simulations#############################################
 
