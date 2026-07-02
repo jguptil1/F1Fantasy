@@ -12,9 +12,9 @@ from src.simulation.simulation_tables import simulation_tables_controller
 
 
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
-RACE_ID = 80
-DRIVER_PREDICTION_RUN_ID = 33
-CONSTRUCTOR_PREDICTION_RUN_ID = 34
+RACE_ID = 81
+DRIVER_PREDICTION_RUN_ID = 37
+CONSTRUCTOR_PREDICTION_RUN_ID = 38
 
 ################################Simulations#############################################
 
@@ -402,7 +402,7 @@ if __name__ == "__main__":
         profile_summary_df=profile_summaries,
         notes="test MVP simulation run"
     )
-
+    print(f'Predictions for Race: {RACE_ID}')
     print(profile_summaries)
 
 
