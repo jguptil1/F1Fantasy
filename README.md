@@ -95,6 +95,7 @@ F1Fantasy/
 - Telemetry-derived pace and degradation features
 - Risk-adjusted lineup optimization
 - Dashboarding and reporting
+- Profiles that align with certain chips available in the game
 - Automated race-week pipelines
 
 ---
@@ -104,8 +105,8 @@ F1Fantasy/
 Active development project.
 
 Current focus areas:
-- Model enrichment
-- Prediction validation
+- Team composition profile creations
+- Weekly review of simulation runs
 - Confidence/risk modeling
 
 ---
