@@ -135,7 +135,7 @@ def main():
         # "fantasy_tables": "build", #default build
         # "constructors": "update", #should update after each
         # "placements": "update", #update or will take forever
-        "elo": "build", #doesnt matter, will always build
+        "elo": "build", #doesnt matter, will always build #FIXME: Not quite sure why i am having to do these twice
         # "budget": "build", #doesnt matter
         # "teamConfiguration": "build", #doesnt matter
         # "qualifying": "build" #doesnt matter
