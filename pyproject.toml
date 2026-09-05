@@ -1,0 +1,14 @@
+[project]
+name = "f1fantasy"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "duckdb>=1.5.5",
+    "ipykernel>=7.3.0",
+    "pandas>=3.0.5",
+    "pathlib>=1.0.1",
+    "pulp>=3.3.2",
+    "scikit-learn>=1.9.0",
+]
