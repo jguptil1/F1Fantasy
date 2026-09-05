@@ -35,6 +35,8 @@ def get_raw_race_session(year, max_retries = 10, sleep_seconds=2):
     returns: pandas dataframe
     '''
 
+    
+
     url = "https://api.openf1.org/v1/sessions"
     params = {
         "year": year
@@ -57,6 +59,8 @@ def get_raw_race_session(year, max_retries = 10, sleep_seconds=2):
             time.sleep(wait)
             continue
             
+        print(response.status_code)
+        print(response.text)
         response.raise_for_status()
         return pd.DataFrame(response.json())
     

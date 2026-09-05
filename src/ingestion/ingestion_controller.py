@@ -131,7 +131,7 @@ def main():
     plan = {
         # "meetings": "build", #this update includes updating the dim_race table #FIXME: update does not work
         # "sessions":"update",
-        # "drivers": "update",
+        # "drivers": "build",
         # "fantasy_tables": "build", #default build
         # "constructors": "update", #should update after each
         # "placements": "update", #update or will take forever

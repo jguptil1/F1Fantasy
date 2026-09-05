@@ -9,7 +9,11 @@ import fastf1
 
 
 #cache location
-fastf1.Cache.enable_cache("data/cache/fastf1")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CACHE_DIR = PROJECT_ROOT / "data" / "cache" / "fastf1"
+
+fastf1.Cache.enable_cache(str(CACHE_DIR))
+
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
 
 

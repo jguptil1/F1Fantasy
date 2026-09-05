@@ -9,7 +9,14 @@ import fastf1
 
 
 #cache location
-fastf1.Cache.enable_cache("data/cache/fastf1")
+
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CACHE_DIR = PROJECT_ROOT / "data" / "cache" / "fastf1"
+
+fastf1.Cache.enable_cache(str(CACHE_DIR))
+#fastf1.Cache.enable_cache("data/cache/fastf1")
 
 
 
