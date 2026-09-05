@@ -109,6 +109,11 @@ Current focus areas:
 - Weekly review of simulation runs
 - Confidence/risk modeling
 
+Desired Features:
+- Would like the ability to scrape the weekly fantasy data instead of manual updates to decrease the total update time. 
+- At some point the code should move to a more sofisticated scheduler/orchestrator but that might have to wait till offseason when i might have more time to develop. 
+- Chip usage through the adding simulation profiles. Could be a weekend project. 
+
 ---
 
 ## Disclaimer
