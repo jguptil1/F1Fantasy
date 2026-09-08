@@ -56,7 +56,7 @@ F1Fantasy/
 │   ├── myTeam/ (deprecated)
 │   ├── other/ (deprecated)
 │   ├── predictions/ (deprecated)
-│   ├── raw/ (deprecated)
+│   ├── raw/
 │   ├── semi-clean/ (deprecated)
 │   └── staged/ (deprecated)
 |
