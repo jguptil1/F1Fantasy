@@ -1,20 +1,22 @@
 import duckdb
 import pandas as pd
 import numpy as np
-#simulator modeule
+# simulator module
 from src.simulation import driver_monte_carlo
-#optimizer engine module
+
+# optimizer modules
 from src.optimizer.pre_race_weekend_optimizer import run_optimizer_profile
 from src.optimizer.optimization_tables import optimizer_tables_controller
-#logging module
+
+# logging module
 from src.simulation.simulation_tables import simulation_tables_controller
 
 
 
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
-RACE_ID = 85
-DRIVER_PREDICTION_RUN_ID = 45
-CONSTRUCTOR_PREDICTION_RUN_ID = 46
+RACE_ID = 86
+DRIVER_PREDICTION_RUN_ID = 47
+CONSTRUCTOR_PREDICTION_RUN_ID = 48
 
 ################################Simulations#############################################
 
@@ -233,9 +235,10 @@ def get_or_create_optimizer_profile(
         optimization_target=optimization_target
     )
 
-    if existing_run_id is not None:
-        print(f"Existing optimizer run found: {existing_run_id}")
-        return existing_run_id
+    #FIXME: this needs to be unhighlighted
+    # if existing_run_id is not None:
+    #     print(f"Existing optimizer run found: {existing_run_id}")
+    #     return existing_run_id
 
     drivers_selected_df, constructors_selected_df, summary_dict = run_optimizer_profile(
         race_id=RACE_ID,

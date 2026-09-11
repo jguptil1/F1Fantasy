@@ -1,6 +1,6 @@
 {
-  "model_name": "LightGBM",
-  "cv_mae": 10.414978937254054,
+  "model_name": "Lasso",
+  "cv_mae": 17.977403499577747,
   "features": [
     "year",
     "race_id",
@@ -9,21 +9,17 @@
     "circuit_short_name",
     "is_sprint_weekend",
     "country_name",
-    "driver_id",
     "constructor_id",
     "price",
-    "elo_before",
     "price_change_prev_race",
     "price_change_pct_prev_race",
     "points_last_5_avg",
+    "points_last_3_avg",
     "ppm_last_5",
-    "avg_quali_last_5",
-    "quali_vs_teammate_last_5",
-    "price_increase",
-    "price_decrease",
+    "ppm_last_3",
     "momentum",
-    "teammate_points_last5",
-    "teammate_delta_last5"
+    "price_increase",
+    "price_decrease"
   ],
-  "asset_type": "driver"
+  "asset_type": "constructor"
 }
