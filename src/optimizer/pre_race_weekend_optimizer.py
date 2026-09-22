@@ -7,7 +7,7 @@ from src.optimizer import teamOptimizer
 DATABASE_PATH = "data/database/f1_fantasy.duckdb"
 
 DEFAULT_OPTIMIZER_SETTINGS = {
-    "free_transfers_avail": 2,
+    "free_transfers_avail": 3,
     "points_col": "predicted_points",
     "n_drivers": 5,
     "n_constructors": 2,

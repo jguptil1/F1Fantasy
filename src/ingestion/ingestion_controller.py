@@ -129,15 +129,15 @@ def main():
     print(f"Buid started at: {start_readable}")
 
     plan = {
-        "meetings": "build", #this update includes updating the dim_race table #FIXME: update does not work
-        "sessions":"update",
-        "drivers": "update", #never build again going forward. if new driver just update
-        "fantasy_tables": "build", #default build
-        "constructors": "update", #should update after each
-        "placements": "update", #update or will take forever
-        "budget": "build", #doesnt matter
-        "teamConfiguration": "build", #doesnt matter
-        "qualifying": "build", #doesnt matter
+        # "meetings": "build", #this update includes updating the dim_race table #FIXME: update does not work
+        # "sessions":"update",
+        # "drivers": "update", #never build again going forward. if new driver just update
+        # "fantasy_tables": "build", #default build
+        # "constructors": "update", #should update after each
+        # "placements": "update", #update or will take forever
+        # "budget": "build", #doesnt matter
+        # "teamConfiguration": "build", #doesnt matter
+        # "qualifying": "build", #doesnt matter
         "elo": "build"  #doesnt matter, will always build #FIXME: Not quite sure why i am having to do these twice
         
     }
