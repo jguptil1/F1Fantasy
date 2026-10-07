@@ -187,7 +187,28 @@ def clean_raw_meetings(df):
 
     #data type conversions
     df["date_start"] = pd.to_datetime(df["date_start"], utc=True, errors="coerce")
-    df["date_end"] = pd.to_datetime(df["date_start"], utc=True, errors="coerce")  
+    df["date_end"] = pd.to_datetime(df["date_end"], utc=True, errors="coerce")  
+
+    # 2026 calendar corrections
+    #bahrain issue
+    bahrain_2026 = (
+        (df["year"] == 2026)
+        & (df["meeting_name"] == "Bahrain Grand Prix")
+    )
+
+    df.loc[bahrain_2026, "country_name"] = "Malaysia"
+    df.loc[bahrain_2026, "circuit_short_name"] = "Sepang"
+
+    df.loc[bahrain_2026, "date_start"] = pd.Timestamp(
+        "2026-10-02",
+        tz="UTC"
+    )
+
+    df.loc[bahrain_2026, "date_end"] = pd.Timestamp(
+        "2026-10-04",
+        tz="UTC"
+    )
+
 
     return df
 
@@ -284,101 +305,127 @@ def build_dim_race():
 
 def update_dim_race():
 
-
     """
-    the only difference between this method and the build_dim_race method is the fact that this creates id's post build using the current max
-
+    The only difference between this method and the build_dim_race method
+    is the fact that this creates IDs post-build using the current max.
     """
 
-
-    #read in the current staged meetings
-
+    # read in the current staged meetings
     with duckdb.connect("data/database/f1_fantasy.duckdb") as con:
 
-            #see which ones in the stage are new
-            staged_race_pull = con.execute("""
-                SELECT
-                    s.year,
-                    s.meeting_name as race_name,
-                    s.meeting_key,
-                    s.country_name, 
-                    s.circuit_short_name,
-                    s.date_start,
-                    s.date_end                    
-                FROM staged_race_meetings_table s
-                LEFT JOIN dim_race r
+        # Update races that already exist
+        con.execute("""
+            UPDATE dim_race AS r
+            SET
+                race_name = s.meeting_name,
+                country_name = s.country_name,
+                circuit_short_name = s.circuit_short_name,
+                date_start = s.date_start,
+                date_end = s.date_end
+            FROM staged_race_meetings_table AS s
+            WHERE r.meeting_key = s.meeting_key
+        """)
+
+        # See which ones in the stage are new
+        staged_race_pull = con.execute("""
+            SELECT
+                s.year,
+                s.meeting_name AS race_name,
+                s.meeting_key,
+                s.country_name,
+                s.circuit_short_name,
+                s.date_start,
+                s.date_end
+            FROM staged_race_meetings_table s
+            LEFT JOIN dim_race r
                 ON s.meeting_key = r.meeting_key
-                WHERE r.race_id IS NULL
-            """).df()
-            
+            WHERE r.race_id IS NULL
+        """).df()
 
-            #current dim table
-            current_dim_table = con.execute("""
-                SELECT * 
+        # Current dim table
+        current_dim_table = con.execute("""
+            SELECT *
+            FROM dim_race
+        """).df()
+
+        sprint_sessions = con.execute("""
+            SELECT DISTINCT
+                meeting_key
+            FROM staged_race_sessions_table
+            WHERE session_type = 'Sprint'
+        """).df()["meeting_key"].to_list()
+
+        # Sort new races chronologically
+        staged_race_pull = staged_race_pull.sort_values(
+            ["year", "date_start"]
+        ).reset_index(drop=True)
+
+        # Temporary race_num assignment for new rows
+        existing_race_nums = (
+            current_dim_table.groupby("year")["race_num"].max().to_dict()
+            if not current_dim_table.empty
+            else {}
+        )
+
+        staged_race_pull["race_num"] = (
+            staged_race_pull.groupby("year").cumcount() + 1
+            + staged_race_pull["year"]
+                .map(existing_race_nums)
+                .fillna(0)
+                .astype(int)
+        )
+
+        # Updating sprint weekend bool
+        staged_race_pull["is_sprint_weekend"] = (
+            staged_race_pull["meeting_key"].isin(sprint_sessions)
+        )
+
+        # Insert genuinely new races
+        if not staged_race_pull.empty:
+
+            current_max = current_dim_table["race_id"].max()
+
+            if pd.isna(current_max):
+                current_max = 0
+
+            staged_race_pull["race_id"] = range(
+                current_max + 1,
+                current_max + 1 + len(staged_race_pull)
+            )
+
+            con.register("race_pull_temp", staged_race_pull)
+
+            con.execute("""
+                INSERT INTO dim_race
+                SELECT
+                    race_id,
+                    year,
+                    race_num,
+                    race_name,
+                    meeting_key,
+                    country_name,
+                    circuit_short_name,
+                    date_start,
+                    date_end,
+                    is_sprint_weekend
+                FROM race_pull_temp
+            """)
+
+        # ALWAYS recalculate race_num based on chronological race order
+        con.execute("""
+            UPDATE dim_race AS r
+            SET race_num = ordered.new_race_num
+            FROM (
+                SELECT
+                    race_id,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY year
+                        ORDER BY date_start
+                    ) AS new_race_num
                 FROM dim_race
-            """).df()
-
-            sprint_sessions = con.execute("""
-                SELECT DISTINCT
-                    meeting_key
-                FROM staged_race_sessions_table
-                WHERE session_type = 'Sprint'
-            """).df()["meeting_key"].to_list()
-
-
-
-            #this will only apply for the first build, all subsequent updates will take the max current id value present and will add one. 
-            staged_race_pull = staged_race_pull.sort_values(["year", "date_start"]).reset_index(drop=True)
-            
-
-
-            #updating race_num vals
-            existing_race_nums = (
-                current_dim_table.groupby("year")["race_num"].max().to_dict()
-                if not current_dim_table.empty else {}
-            )
-
-            staged_race_pull["race_num"] = (
-                staged_race_pull.groupby("year").cumcount() + 1
-                + staged_race_pull["year"].map(existing_race_nums).fillna(0).astype(int)
-            )
-
-
-            #updating sprint week bool
-            staged_race_pull['is_sprint_weekend'] = staged_race_pull["meeting_key"].isin(sprint_sessions)
-            
-
-            if not staged_race_pull.empty:
-                current_max = current_dim_table["race_id"].max()
-
-                if pd.isna(current_max):
-                    current_max=0
-
-
-                staged_race_pull["race_id"] = range(
-                    current_max + 1,
-                    current_max + 1 + len(staged_race_pull)
-                )
-
-
-                con.register("race_pull_temp", staged_race_pull)
-
-                con.execute("""
-                    INSERT INTO dim_race
-                    SELECT
-                        race_id,
-                        year,
-                        race_num,
-                        race_name,
-                        meeting_key,
-                        country_name,
-                        circuit_short_name,
-                        date_start,
-                        date_end,
-                        is_sprint_weekend
-                    FROM race_pull_temp
-                """)
-
+            ) AS ordered
+            WHERE r.race_id = ordered.race_id
+        """)
 
 ############################Pipeline Controller################
 

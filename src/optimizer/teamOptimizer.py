@@ -20,7 +20,7 @@ def optimize_team(
     drivers,
     cons,
     last_week_lineup: dict | None = None, 
-    free_transfers_avail: int = 2,
+    free_transfers_avail: int = 3,
     points_col: str = "predicted_points",
     n_drivers: int = 5,
     n_constructors: int = 2,

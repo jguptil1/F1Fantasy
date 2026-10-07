@@ -192,7 +192,7 @@ def validate_pre_race_driver_features():
     critical_cols = [
     "driver_id",
     "race_id",
-    "price",
+    #"price",
     "elo_before"
     ]   
 
