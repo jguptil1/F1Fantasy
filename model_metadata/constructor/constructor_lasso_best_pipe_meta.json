@@ -1,6 +1,6 @@
 {
   "model_name": "Lasso",
-  "cv_mae": 17.977403499577747,
+  "cv_mae": 17.4096037159694,
   "features": [
     "year",
     "race_id",

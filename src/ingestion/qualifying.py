@@ -17,8 +17,6 @@ def read_quali_session_key_list():
 
 
 
-
-
 #API Caller
 def get_raw_quali_session_result(session_key, max_retries = 10, sleep_seconds=2):
 
